@@ -55,8 +55,8 @@ class wall_tones
         if (!enabled || @map == null)
             return;
 
-        update_dir(wall_left, map, x, y, -1, 0, left_file, -1.0);
-        update_dir(wall_right, map, x, y, 1, 0, right_file, 1.0);
+        update_dir(wall_left, map, x, y, -1, 0, left_file, -100.0);
+        update_dir(wall_right, map, x, y, 1, 0, right_file, 100.0);
         update_dir(wall_up, map, x, y, 0, 1, up_file, 0.0);
         update_dir(wall_down, map, x, y, 0, -1, down_file, 0.0);
     }
@@ -89,22 +89,14 @@ class wall_tones
                 }
             }
 
-            if (!s.playing)
-            {
-                if (!s.active)
-                    s.load(file);
-                if (s.active)
-                {
-                    s.pan = pan;
-                    s.volume = min_volume;
-                    s.play_looped();
-                    s.set_fade_in_milliseconds(min_volume, vol, 80);
-                }
-            }
-            else
+            if (!s.active)
+                s.load(file);
+            if (s.active)
             {
                 s.pan = pan;
-                s.set_fade_in_milliseconds(s.volume, vol, 80);
+                s.volume = vol;
+                if (!s.playing)
+                    s.play_looped();
             }
         }
         else

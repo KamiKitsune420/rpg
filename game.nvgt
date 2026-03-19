@@ -27,7 +27,7 @@ sound_pool objpool;
 sound_pool doorpool;
 music_system music;
 game_map gm;
-wall_tones wt(3);
+wall_tones wt(6);
 vector me;
 string current_zone = "";
 string current_map_path = "";
