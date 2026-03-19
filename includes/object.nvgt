@@ -232,7 +232,19 @@ class scene_npc : game_object
 	{
 		string ikey = current_map_path + ":" + string(minx) + ":" + string(miny);
 		record_object_interaction(ikey);
-		scene.play(scene_file);
+		if (scene_file.starts_with("\""))
+		{
+			string text = scene_file.substr(1);
+			if (text.ends_with("\""))
+				text = text.substr(0, text.length() - 1);
+			pause_object_audio();
+			mdlg(text.replace("|", "\r\n", true));
+			resume_object_audio();
+		}
+		else
+		{
+			scene.play(scene_file);
+		}
 	}
 }
 

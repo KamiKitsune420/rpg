@@ -8,7 +8,7 @@ wall:14:14:0:12:wood:room
 wall:0:14:0:0:wood:room
 wall:14:14:0:4:wood:room
 wall:14:14:6:12:wood:room
-object:3:3:8:8:"Garret says he's strong enough to carry coal now. Matron says strength is not the same as judgment. He hates when she's right.":objects\npc.ogg
+npc:3:3:8:8:objects\npc.ogg:"Garret says he's strong enough to carry coal now. Matron says strength is not the same as judgment. He hates when she's right."
 object:7:11:5:7:A practice slate leans against the wall, covered in numbers rubbed half away.:objects\paper.ogg
 object:4:9:3:5:A narrow bed with one boot abandoned underneath it.:objects\bed.ogg
 door:14:14:5:5:data\maps\orphanage_hall.map:1:20:You step back into the orphanage hall.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false

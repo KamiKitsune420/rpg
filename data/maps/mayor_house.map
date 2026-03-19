@@ -7,17 +7,17 @@ wall:50:50:0:40:wood:house
 wall:0:50:0:0:wood:house
 wall:0:19:28:28:wood:divider
 wall:31:50:28:28:wood:divider
-object:23:23:4:4:"If you have mud on your boots, wipe them before you track village filth across my floorboards.":objects\npc.ogg
-object:4:4:4:4:"In my day, people stood straighter and spoke less. Two habits this village could stand to recover.":objects\npc.ogg
-object:43:43:4:4:"Do close the door properly. Drafts are for barns, not respectable homes.":objects\npc.ogg
-object:10:10:13:13:"If you need a quiet place to breathe, stay near the bookcase. Father seldom wanders that far.":objects\npc.ogg
-object:14:14:20:20:"You look pale. Sit a moment, and I'll bring tea before someone notices and makes it unpleasant.":objects\npc.ogg
-object:22:22:15:15:"Well, you don't look particularly important, do you? I suppose that must be freeing.":objects\npc.ogg
-object:28:28:20:20:"One day this village will appreciate a commanding presence. Until then, it has me.":objects\npc.ogg
-object:36:36:15:15:"If this is another family conversation, wake me when it becomes worth hearing.":objects\npc.ogg
-object:42:42:20:20:"Careful what you repeat outside this house. Stories travel faster when I give them a push.":objects\npc.ogg
-object:10:10:24:24:"Why is everyone always whispering? If they have complaints, they can line up and complain properly.":objects\npc.ogg
-object:22:22:34:34:"You may address me as Mayor Holloway, and you may keep this brief. A household of importance does not run itself.|What you see here is forty years of careful management. You are welcome to observe from a respectful distance.|If you have business with the village, bring it in writing. Loose words accomplish nothing and leave even less.":objects\npc.ogg
+npc:23:23:4:4:objects\npc.ogg:"If you have mud on your boots, wipe them before you track village filth across my floorboards."
+npc:4:4:4:4:objects\npc.ogg:"In my day, people stood straighter and spoke less. Two habits this village could stand to recover."
+npc:43:43:4:4:objects\npc.ogg:"Do close the door properly. Drafts are for barns, not respectable homes."
+npc:10:10:13:13:objects\npc.ogg:"If you need a quiet place to breathe, stay near the bookcase. Father seldom wanders that far."
+npc:14:14:20:20:objects\npc.ogg:"You look pale. Sit a moment, and I'll bring tea before someone notices and makes it unpleasant."
+npc:22:22:15:15:objects\npc.ogg:"Well, you don't look particularly important, do you? I suppose that must be freeing."
+npc:28:28:20:20:objects\npc.ogg:"One day this village will appreciate a commanding presence. Until then, it has me."
+npc:36:36:15:15:objects\npc.ogg:"If this is another family conversation, wake me when it becomes worth hearing."
+npc:42:42:20:20:objects\npc.ogg:"Careful what you repeat outside this house. Stories travel faster when I give them a push."
+npc:10:10:24:24:objects\npc.ogg:"Why is everyone always whispering? If they have complaints, they can line up and complain properly."
+npc:22:22:34:34:objects\npc.ogg:"You may address me as Mayor Holloway, and you may keep this brief. A household of importance does not run itself.|What you see here is forty years of careful management. You are welcome to observe from a respectful distance.|If you have business with the village, bring it in writing. Loose words accomplish nothing and leave even less."
 object:18:32:8:10:A broad dining table groans under trays, silverware, and enough food for a house that never learned moderation.:objects\table.ogg
 object:4:10:18:20:A deep upholstered sofa sits near the hearth, chosen more for status than comfort.:objects\sofa.ogg
 object:4:8:13:15:A tall bookshelf is packed with untouched histories, legal codes, and expensive bindings bought for show.:objects\bookshelf.ogg

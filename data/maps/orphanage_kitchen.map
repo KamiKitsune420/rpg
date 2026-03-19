@@ -9,5 +9,5 @@ wall:0:20:0:0:wood:kitchen
 object:3:6:14:16:A heavy oven hums with the smell of bread, onions, and tomorrow's broth.:objects\oven.ogg
 object:10:16:14:16:A prep table is covered in peeled carrots, an open flour sack, and a dull kitchen knife.:objects\table.ogg
 object:4:8:8:10:A shelf of bowls, chipped mugs, and labeled jars rises almost to the ceiling.:objects\bookshelf.ogg
-object:12:12:8:8:"If you can carry a sack without falling over, you can be useful in a kitchen. That's practically a law.":objects\npc.ogg
+npc:12:12:8:8:objects\npc.ogg:"If you can carry a sack without falling over, you can be useful in a kitchen. That's practically a law."
 door:10:10:0:0:data\maps\orphanage.map:20:39:You step back into the common room with the smell of supper clinging to you.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false

@@ -11,10 +11,10 @@ wall:21:37:40:40:wood:common_room
 wall:39:40:40:40:wood:common_room
 object:25:27:25:27:A television murmurs softly to itself, showing a program no one in the room is really watching.:objects\tv.ogg
 object:10:15:10:12:A wide sofa sags in the middle from years of children piling onto it at once.:objects\sofa.ogg
-object:6:6:28:28:"Matron Elira says if you're going to help around here, start by using your eyes. The children leave needs lying in plain sight.":objects\npc.ogg
-object:17:17:20:20:"If you're not busy, the little ones keep asking when supper is. They ask every ten minutes, but they mean it every time.":objects\npc.ogg
-object:31:31:14:14:"Toma says the quiet room isn't haunted. Toma says that because he wants everyone else to stop daring him to go in.":objects\npc.ogg
-object:22:22:8:8:"If someone ever fixes the emergency exit in the hall, maybe Matron will stop muttering at it under her breath.":objects\npc.ogg
+npc:6:6:28:28:objects\npc.ogg:"Matron Elira says if you're going to help around here, start by using your eyes. The children leave needs lying in plain sight."
+npc:17:17:20:20:objects\npc.ogg:"If you're not busy, the little ones keep asking when supper is. They ask every ten minutes, but they mean it every time."
+npc:31:31:14:14:objects\npc.ogg:"Toma says the quiet room isn't haunted. Toma says that because he wants everyone else to stop daring him to go in."
+npc:22:22:8:8:objects\npc.ogg:"If someone ever fixes the emergency exit in the hall, maybe Matron will stop muttering at it under her breath."
 object:4:8:8:10:A toy chest sits open, half full of carved animals, threadbare dolls, and a wooden soldier missing one arm.:objects\table.ogg
 object:30:35:32:34:A long low shelf holds board games, chipped cups, and folded blankets for nights when everyone wants to stay in one room.:objects\bookshelf.ogg
 door:40:40:20:20:data\maps\village.map:35:20:You step back outside the orphanage door.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false

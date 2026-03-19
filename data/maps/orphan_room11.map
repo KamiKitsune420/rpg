@@ -8,7 +8,7 @@ wall:14:14:0:12:wood:room
 wall:0:14:0:0:wood:room
 wall:0:0:0:4:wood:room
 wall:0:0:6:12:wood:room
-object:3:3:8:8:"Anwen says if the apothecary ever trusts someone smaller than a cart with medicine, she'll finally stop making two trips a week.":objects\npc.ogg
+npc:3:3:8:8:objects\npc.ogg:"Anwen says if the apothecary ever trusts someone smaller than a cart with medicine, she'll finally stop making two trips a week."
 object:8:11:5:7:A neat stack of folded clothes and mended socks suggests someone in here helps the younger children first and themselves second.:objects\table.ogg
 object:4:9:3:5:A narrow bed with a carefully tucked blanket and a slate tucked beneath it.:objects\bed.ogg
 door:0:0:5:5:data\maps\orphanage_hall.map:19:27:You step back into the orphanage hall.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
