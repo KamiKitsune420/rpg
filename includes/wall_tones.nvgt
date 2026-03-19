@@ -95,21 +95,25 @@ class wall_tones
                     s.load(file);
                 if (s.active)
                 {
-                    s.set_pan(pan);
-                    s.set_volume(vol);
+                    s.pan = pan;
+                    s.volume = min_volume;
                     s.play_looped();
+                    s.set_fade_in_milliseconds(-1, vol, 80);
                 }
             }
             else
             {
-                s.set_pan(pan);
-                s.set_volume(vol);
+                s.pan = pan;
+                s.set_fade_in_milliseconds(-1, vol, 80);
             }
         }
         else
         {
             if (s.playing)
+            {
+                s.set_fade_in_milliseconds(-1, min_volume - 10.0, 80);
                 s.stop();
+            }
         }
     }
 }
