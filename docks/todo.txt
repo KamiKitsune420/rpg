@@ -1,7 +1,7 @@
 Rpg too do list:
 1. Either add a map builder into the game or make a standalone program so it would be easyer for the game devs to create maps.
 2. fix the battle engine. text should be made differently, surtain things should not be said, enamies should more more, etc
-3. add chests
+*done 3. add chests
 4. make the village smaller, and the maps less crowded
-5. add a fanfare for quest complete
+*done 5. add a fanfare for quest complete
 6. change how skills are made. should have a learnset and the char should start with 2 skills at lvl1, and learn from that learnset via lvlup.

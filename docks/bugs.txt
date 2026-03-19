@@ -1,3 +1,3 @@
 Put all bugs in this file
-battle: when you are in the battle zone, you get Infinite battles. what is suppose to happen is you are suppose to walk around the map then a battle would trigger, like in manamon or pokemon.
-audio: sounds seems to be blending with each other? there also seems to be panning issues. maybe adding pan volume and pan step would fix?
+fixed! battle: when you are in the battle zone, you get Infinite battles. what is suppose to happen is you are suppose to walk around the map then a battle would trigger, like in manamon or pokemon.
+fixed! audio: sounds seems to be blending with each other? there also seems to be panning issues. maybe adding pan volume and pan step would fix?
