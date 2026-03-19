@@ -84,6 +84,7 @@ class text_input
 	key_repeat_state delete_repeat;
 	key_repeat_state left_repeat;
 	key_repeat_state right_repeat;
+	int selection_anchor; // -1 = no selection
 
 	text_input()
 	{
@@ -106,11 +107,64 @@ class text_input
 		allow_empty = true;
 		cancelled = false;
 		caps_mode = TEXT_INPUT_SPEAK_CAPS;
+		selection_anchor = -1;
 	}
 
 	bool control_down()
 	{
 		return key_down(KEY_LCTRL) || key_down(KEY_RCTRL);
+	}
+
+	bool shift_down()
+	{
+		return key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT);
+	}
+
+	bool has_selection()
+	{
+		return selection_anchor >= 0 && selection_anchor != int(cursor);
+	}
+
+	uint selection_start_pos()
+	{
+		return uint(selection_anchor) < cursor ? uint(selection_anchor) : cursor;
+	}
+
+	uint selection_end_pos()
+	{
+		return uint(selection_anchor) > cursor ? uint(selection_anchor) : cursor;
+	}
+
+	void clear_selection()
+	{
+		selection_anchor = -1;
+	}
+
+	void start_selection()
+	{
+		if (selection_anchor < 0)
+			selection_anchor = int(cursor);
+	}
+
+	void delete_selection()
+	{
+		uint start = selection_start_pos();
+		uint end = selection_end_pos();
+		delete_range(start, end - start);
+		cursor = start;
+		selection_anchor = -1;
+	}
+
+	void speak_selection()
+	{
+		if (!has_selection())
+		{
+			speak("No selection");
+			return;
+		}
+		uint start = selection_start_pos();
+		uint end = selection_end_pos();
+		speak(buffer.substr(start, end - start));
 	}
 
 	bool is_uppercase_letter(const string&in character)
@@ -240,6 +294,8 @@ class text_input
 
 	bool insert_character(const string&in character, bool echo = true)
 	{
+		if (has_selection())
+			delete_selection();
 		if (!can_insert())
 			return false;
 
@@ -465,45 +521,91 @@ class text_input
 					if (!insert_text(clipboard_get_text(), true))
 						speak("Nothing pasted.");
 				}
+
+				if (key_pressed(KEY_A))
+				{
+					if (buffer != "")
+					{
+						selection_anchor = 0;
+						cursor = buffer.length();
+						speak("Selected all.");
+					}
+				}
+
+				if (key_pressed(KEY_S))
+					speak_selection();
 			}
 
 			if (key_pressed(KEY_HOME))
 			{
+				if (shift_down())
+					start_selection();
+				else
+					clear_selection();
 				cursor = 0;
-				speak("Start");
+				speak_character_at_cursor();
 			}
 
 			if (key_pressed(KEY_END))
 			{
+				if (shift_down())
+					start_selection();
+				else
+					clear_selection();
 				cursor = buffer.length();
-				speak("End");
+				speak("Blank");
 			}
 
 			if (right_repeat.pressing())
 			{
 				if (control_down())
-					move_to_next_word();
-				else if (cursor < buffer.length())
 				{
-					cursor++;
-					speak_character_before_cursor();
+					clear_selection();
+					move_to_next_word();
+				}
+				else
+				{
+					if (shift_down())
+						start_selection();
+					else
+						clear_selection();
+					if (cursor < buffer.length())
+					{
+						cursor++;
+						speak_character_before_cursor();
+					}
 				}
 			}
 
 			if (left_repeat.pressing())
 			{
 				if (control_down())
-					move_to_previous_word();
-				else if (cursor > 0)
 				{
-					cursor--;
-					speak_character_at_cursor();
+					clear_selection();
+					move_to_previous_word();
+				}
+				else
+				{
+					if (shift_down())
+						start_selection();
+					else
+						clear_selection();
+					if (cursor > 0)
+					{
+						cursor--;
+						speak_character_at_cursor();
+					}
 				}
 			}
 
 			if (backspace_repeat.pressing())
 			{
-				if (control_down() && buffer != "")
+				if (has_selection())
+				{
+					delete_selection();
+					speak("Deleted.");
+				}
+				else if (control_down() && buffer != "")
 				{
 					buffer = "";
 					cursor = 0;
@@ -516,7 +618,15 @@ class text_input
 			}
 
 			if (delete_repeat.pressing())
-				delete_character();
+			{
+				if (has_selection())
+				{
+					delete_selection();
+					speak("Deleted.");
+				}
+				else
+					delete_character();
+			}
 
 			if (key_pressed(KEY_RETURN))
 			{

@@ -54,11 +54,11 @@ class battle_zone
 		if (!player_was_in) player_was_in = true;
 		if (cooldown.elapsed < 8000) return;
 		if (int(random(0, 32)) != 0) return;
-		cooldown.restart();
 		string enemy_id = resolve_spec(enemy_spec);
 		int lvl = resolve_int_spec(level_spec);
 		if (enemy_id == "") return;
 		battle.start(enemy_id, lvl, quest_id, quest_increment);
+		cooldown.restart();
 	}
 
 	string resolve_spec(string spec)

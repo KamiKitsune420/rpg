@@ -496,6 +496,15 @@ void setup_systems()
 {
 	show_window("RPG");
 	set_sound_global_hrtf(false);
+	p.behind_pitch_decrease = -5;
+	p.pan_step = 3.2;
+	p.volume_step = 2.5;
+	objpool.behind_pitch_decrease = -5;
+	objpool.pan_step = 3.2;
+	objpool.volume_step = 2.5;
+	doorpool.behind_pitch_decrease = -5;
+	doorpool.pan_step = 3.2;
+	doorpool.volume_step = 2.5;
 	wt.set_files("sounds\\sonar\\wall_west.ogg", "sounds\\sonar\\wall_east.ogg", "sounds\\sonar\\wall_north.ogg", "sounds\\sonar\\wall_south.ogg");
 	wt.start();
 	me.x = 0;
