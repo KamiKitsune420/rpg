@@ -33,7 +33,7 @@ if (d.length()>1)
 {
 for (uint i=1; i<d.length(); i++)
 {
-if (key_down(KEY_LCONTROL) or key_down(KEY_RCONTROL))
+if (key_down(KEY_LCTRL) or key_down(KEY_RCTRL))
 break;
 p.play_stationary("sounds/dlg/scroll.ogg",false);
 dlg_show(d[i]);

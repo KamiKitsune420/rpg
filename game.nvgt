@@ -405,7 +405,7 @@ void update_world()
 		speak("Music " + string(new_vol), true);
 	}
 
-	if (key_pressed(KEY_RETURN))
+	if (key_pressed(KEY_RETURN) || key_pressed(KEY_SPACE))
 		interact_last_collider(me.x, me.y);
 
 	if (key_down(KEY_LEFT) && walktimer.elapsed >= walkspeed)
