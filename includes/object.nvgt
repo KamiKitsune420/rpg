@@ -346,6 +346,11 @@ class map_chest : game_object
 		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
 		if (is_item_collected(ckey))
 			opened = true;
+
+		string loop_sound = opened ? "sounds\\misk\\chestopen.ogg" : "sounds\\misk\\chest.ogg";
+		sound_slot = objpool.play_2d(loop_sound, me.x, me.y, sx, sy, true);
+		if (sound_slot >= 0)
+			objpool.update_sound_range_2d(sound_slot, sx - minx, maxx - sx, sy - miny, maxy - sy);
 	}
 
 	void interact()
@@ -353,11 +358,14 @@ class map_chest : game_object
 		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
 		if (opened)
 		{
-			int slot = p.play_stationary("sounds\\misk\\chest.ogg", false);
-			while (p.sound_is_active(slot))
-				wait(5);
 			mdlg("The chest is open and empty.");
 			return;
+		}
+
+		if (sound_slot >= 0)
+		{
+			objpool.destroy_sound(sound_slot);
+			sound_slot = -1;
 		}
 
 		int open_slot = p.play_stationary("sounds\\misk\\chestopen.ogg", false);
@@ -391,6 +399,10 @@ class map_chest : game_object
 
 		opened = true;
 		mark_item_collected(ckey);
+
+		sound_slot = objpool.play_2d("sounds\\misk\\chestopen.ogg", me.x, me.y, sx, sy, true);
+		if (sound_slot >= 0)
+			objpool.update_sound_range_2d(sound_slot, sx - minx, maxx - sx, sy - miny, maxy - sy);
 	}
 }
 
