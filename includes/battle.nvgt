@@ -137,7 +137,7 @@ class battle_system
 
 		// Start battle music
 		battle_music_snd.load("sounds\\MUSIC\\battle.ogg");
-		battle_music_snd.volume = 0;
+		battle_music_snd.volume = music.base_volume;
 		battle_music_snd.play_looped();
 
 		if (def.noise_sound != "" && file_exists(def.noise_sound))
@@ -452,6 +452,7 @@ class battle_system
 
 		// Spell hit sound and pain sound play simultaneously
 		string spell_hit = "sounds\\spells\\" + skill.name.lower().replace(" ", "") + "hit.ogg";
+		bool killed = target.current_hp <= 0;
 		sound spell_snd;
 		sound pain_snd;
 		if (file_exists(spell_hit))
@@ -460,7 +461,7 @@ class battle_system
 			spell_snd.pan = int(target.position * 100.0f);
 			spell_snd.play();
 		}
-		if (!target.dead && target.def.pain_sound != "" && file_exists(target.def.pain_sound))
+		if (!killed && target.def.pain_sound != "" && file_exists(target.def.pain_sound))
 		{
 			pain_snd.load(target.def.pain_sound);
 			pain_snd.pan = int(target.position * 100.0f);
@@ -468,10 +469,9 @@ class battle_system
 		}
 		while (spell_snd.playing || pain_snd.playing) wait(5);
 
-		speak(skill.name + ". " + target.def.name + " takes " + string(dmg) + " damage.", true);
-		wait(300);
+		mdlg("You dealt " + string(dmg) + " damage to " + target.def.name + "!");
 
-		if (target.current_hp <= 0)
+		if (killed)
 		{
 			target.dead = true;
 			if (target.def.die_sound != "" && file_exists(target.def.die_sound))
