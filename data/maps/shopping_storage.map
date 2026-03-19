@@ -6,8 +6,8 @@ wall:0:0:0:24:wood:warehouse
 wall:30:30:0:24:wood:warehouse
 wall:0:12:0:0:wood:warehouse
 wall:18:30:0:0:wood:warehouse
-npc:2:4:4:6:objects\npc.ogg:data\story\storage_man.txt
+npc:2:2:4:4:objects\npc.ogg:data\story\storage_man.txt
 battlezone:1:29:1:23:rat:random(1,3):rat_problem:10
 door:13:17:0:0:data\maps\shopping_center.map:40:58:You step back out into the narrow alcove behind the shopping floor.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
-item:5:5:5:5:potion
-item:16:16:16:16:potion
+chest:5:5:5:5:items(potion,potion)
+chest:16:16:16:16:items(potion,bread)

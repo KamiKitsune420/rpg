@@ -318,6 +318,79 @@ void spawn_trigger(int minx, int maxx, int miny, int maxy, string scene_path, bo
 	triggers.insert_last(map_trigger(minx, maxx, miny, maxy, scene_path, once));
 }
 
+class map_chest : game_object
+{
+	string[] item_ids;
+	int[] item_amounts;
+	bool opened;
+
+	map_chest(int minx, int maxx, int miny, int maxy, string[]@ ids, int[]@ amounts)
+	{
+		super(minx, maxx, miny, maxy, "", "");
+		item_ids = ids;
+		item_amounts = amounts;
+		opened = false;
+
+		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		if (is_item_collected(ckey))
+			opened = true;
+	}
+
+	void interact()
+	{
+		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		if (opened)
+		{
+			int slot = p.play_stationary("sounds\\misk\\chest.ogg", false);
+			while (p.sound_is_active(slot))
+				wait(5);
+			mdlg("The chest is open and empty.");
+			return;
+		}
+
+		int open_slot = p.play_stationary("sounds\\misk\\chestopen.ogg", false);
+		while (p.sound_is_active(open_slot))
+			wait(5);
+
+		for (uint i = 0; i < item_ids.length(); i++)
+		{
+			string id = item_ids[i];
+			int amount = item_amounts[i];
+			if (id == "gold")
+			{
+				gain_gold(amount, true);
+				mdlg(player_name + " found " + string(amount) + " gold.");
+			}
+			else
+			{
+				int iget_slot = p.play_stationary("sounds\\misk\\itemget.ogg", false);
+				while (p.sound_is_active(iget_slot))
+					wait(5);
+				item_definition@ def = find_item_def(id);
+				string name = @def != null ? def.name : id;
+				string description = @def != null ? def.description : "";
+				inventory.add_item(id, name, description, amount);
+				string msg = amount == 1
+					? player_name + " found a " + name + "."
+					: player_name + " found " + string(amount) + " " + name + ".";
+				mdlg(msg);
+			}
+		}
+
+		opened = true;
+		mark_item_collected(ckey);
+	}
+}
+
+void spawn_chest(int minx, int maxx, int miny, int maxy, string[]@ ids, int[]@ amounts)
+{
+	map_chest@ c = map_chest(minx, maxx, miny, maxy, ids, amounts);
+	int idx = add_collider(c);
+	if (idx >= int(objects.length()))
+		objects.resize(idx + 1);
+	@objects[idx] = c;
+}
+
 void destroy_all_objects()
 {
 	objpool.destroy_all();

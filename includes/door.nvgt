@@ -39,8 +39,7 @@ opentype=osound;
 automatic=acl;
 locked=ldk;
 lockedtext=ltext;
-float door_pitch = 85.0 + float((int(minx) * 7 + int(miny) * 13) % 30);
-travsound = doorpool.play_extended_2d(resolve_door_sound_path(looptype), me.x, me.y, minx, miny, 0.0, 0, 0, 0, 0, true, 0.0, 0.0, 0.0, door_pitch);
+travsound = doorpool.play_extended_2d(resolve_door_sound_path(looptype), me.x, me.y, minx, miny, 0.0, 0, 0, 0, 0, true, 0.0, 0.0, 0.0, 100.0);
 doorpool.update_sound_range_2d(travsound, 0, maxx-minx, 0, maxy-miny);
 }
 }
