@@ -400,11 +400,23 @@ class battle_system
 		charge_snd.stop();
 		move_snd.stop();
 
-		// Spell release
-		sound release_snd;
-		release_snd.load("sounds\\player\\powerup_activate.ogg");
-		release_snd.play();
-		while (release_snd.playing) wait(5);
+		// Spell cast sound (panned toward target)
+		string spell_cast = "sounds\\spells\\" + skill.name.lower().replace(" ", "") + ".ogg";
+		if (file_exists(spell_cast))
+		{
+			sound cast_snd;
+			cast_snd.load(spell_cast);
+			cast_snd.pan = int(target.position * 100.0f);
+			cast_snd.play();
+			while (cast_snd.playing) wait(5);
+		}
+		else
+		{
+			sound release_snd;
+			release_snd.load("sounds\\player\\powerup_activate.ogg");
+			release_snd.play();
+			while (release_snd.playing) wait(5);
+		}
 
 		// Calculate outcome
 		float aim_diff = player_aim - target.position;
@@ -429,7 +441,7 @@ class battle_system
 		if (target.current_hp < 0) target.current_hp = 0;
 
 		// Spell hit sound (panned to target)
-		string spell_hit = "sounds\spells\\" + skill.name.lower().replace(" ", "") + "hit.ogg";
+		string spell_hit = "sounds\\spells\\" + skill.name.lower().replace(" ", "") + "hit.ogg";
 		if (file_exists(spell_hit))
 		{
 			sound spell_snd;
