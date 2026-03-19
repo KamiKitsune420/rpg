@@ -34,7 +34,6 @@ class battle_zone
 	string quest_id;
 	int quest_increment;
 	timer cooldown;
-	bool player_was_in;
 
 	battle_zone(int _minx, int _maxx, int _miny, int _maxy, string espec, string lspec, string qid = "", int qinc = 0)
 	{
@@ -43,17 +42,14 @@ class battle_zone
 		level_spec = lspec;
 		quest_id = qid;
 		quest_increment = qinc;
-		player_was_in = false;
 		cooldown.restart();
 	}
 
 	void check(int x, int y)
 	{
-		bool in_area = x >= minx && x <= maxx && y >= miny && y <= maxy;
-		if (!in_area) { player_was_in = false; return; }
-		if (!player_was_in) player_was_in = true;
-		if (cooldown.elapsed < 8000) return;
-		if (int(random(0, 32)) != 0) return;
+		if (x < minx || x > maxx || y < miny || y > maxy) return;
+		if (cooldown.elapsed < 3000) return;
+		if (int(random(1, 10)) != 1) return;
 		string enemy_id = resolve_spec(enemy_spec);
 		int lvl = resolve_int_spec(level_spec);
 		if (enemy_id == "") return;

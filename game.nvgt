@@ -407,6 +407,7 @@ void update_world()
 			me.x -= 1;
 			playstep(me.x, me.y);
 			check_zone();
+			check_battle_zones(int(me.x), int(me.y));
 		}
 		wt.update(gm, me.x, me.y);
 		walktimer.restart();
@@ -431,6 +432,7 @@ void update_world()
 			me.x += 1;
 			playstep(me.x, me.y);
 			check_zone();
+			check_battle_zones(int(me.x), int(me.y));
 		}
 		wt.update(gm, me.x, me.y);
 		walktimer.restart();
@@ -455,6 +457,7 @@ void update_world()
 			me.y += 1;
 			playstep(me.x, me.y);
 			check_zone();
+			check_battle_zones(int(me.x), int(me.y));
 		}
 		wt.update(gm, me.x, me.y);
 		walktimer.restart();
@@ -479,6 +482,7 @@ void update_world()
 			me.y -= 1;
 			playstep(me.x, me.y);
 			check_zone();
+			check_battle_zones(int(me.x), int(me.y));
 		}
 		wt.update(gm, me.x, me.y);
 		walktimer.restart();
@@ -489,7 +493,6 @@ void update_world()
 	update_audio_listener();
 	update_quest_progress();
 	check_triggers(int(me.x), int(me.y));
-	check_battle_zones(int(me.x), int(me.y));
 }
 
 void setup_systems()
