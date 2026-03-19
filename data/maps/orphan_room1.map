@@ -8,7 +8,7 @@ wall:14:14:0:12:wood:room
 wall:0:14:0:0:wood:room
 wall:14:14:0:4:wood:room
 wall:14:14:6:12:wood:room
-object:2:5:8:10:"Lio says he dropped a brass token somewhere near the well. If you ever find it, it's mine. I mean, his. Mostly his.":objects\npc.ogg
-object:8:11:8:10:"Pell keeps waking up when the shutters knock. If someone fixed the latch, he'd stop pretending he doesn't care.":objects\npc.ogg
+object:2:2:8:8:"Lio says he dropped a brass token somewhere near the well. If you ever find it, it's mine. I mean, his. Mostly his.":objects\npc.ogg
+object:8:8:8:8:"Pell keeps waking up when the shutters knock. If someone fixed the latch, he'd stop pretending he doesn't care.":objects\npc.ogg
 object:4:9:5:7:Two narrow beds sit head to head under a patched blanket.:objects\bed.ogg
 door:14:14:5:5:data\maps\orphanage_hall.map:1:6:You step back into the orphanage hall.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false

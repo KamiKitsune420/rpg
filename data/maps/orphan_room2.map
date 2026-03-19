@@ -8,7 +8,7 @@ wall:14:14:0:12:wood:room
 wall:0:14:0:0:wood:room
 wall:0:0:0:4:wood:room
 wall:0:0:6:12:wood:room
-object:3:6:8:10:"Sera's doll lost an eye again. If somebody ever learns how to mend toys proper, tell them I'm first in line.":objects\npc.ogg
+object:3:3:8:8:"Sera's doll lost an eye again. If somebody ever learns how to mend toys proper, tell them I'm first in line.":objects\npc.ogg
 object:8:12:5:7:A small table holds folded paper cranes, a cup, and a button collection sorted by color.:objects\table.ogg
 object:4:9:3:5:A tidy single bed with the blanket tucked so sharply it could cut air.:objects\bed.ogg
 door:0:0:5:5:data\maps\orphanage_hall.map:19:6:You step back into the orphanage hall.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
