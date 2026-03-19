@@ -369,7 +369,7 @@ void update_world()
 	}
 
 	if (key_pressed(KEY_G))
-		speak("Gold. " + string(player.gold), true);
+		speak(string(player.gold) + " gold", true);
 
 	if (key_pressed(KEY_L))
 	{

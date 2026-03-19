@@ -400,15 +400,25 @@ class battle_system
 		charge_snd.stop();
 		move_snd.stop();
 
-		// Spell cast sound (panned toward target)
+		// Spell cast sound — pans from center toward target as it travels
 		string spell_cast = "sounds\\spells\\" + skill.name.lower().replace(" ", "") + ".ogg";
 		if (file_exists(spell_cast))
 		{
 			sound cast_snd;
 			cast_snd.load(spell_cast);
-			cast_snd.pan = int(target.position * 100.0f);
+			cast_snd.pan = 0;
 			cast_snd.play();
-			while (cast_snd.playing) wait(5);
+			float cast_start = 0.0f;
+			float cast_end = target.position;
+			timer cast_timer;
+			while (cast_snd.playing)
+			{
+				float cast_dur = cast_snd.length > 0 ? float(cast_snd.length) : 500.0f;
+				float t = float(cast_timer.elapsed) / cast_dur;
+				if (t > 1.0f) t = 1.0f;
+				cast_snd.pan = int((cast_start + (cast_end - cast_start) * t) * 100.0f);
+				wait(5);
+			}
 		}
 		else
 		{
@@ -440,26 +450,23 @@ class battle_system
 		target.current_hp -= dmg;
 		if (target.current_hp < 0) target.current_hp = 0;
 
-		// Spell hit sound (panned to target)
+		// Spell hit sound and pain sound play simultaneously
 		string spell_hit = "sounds\\spells\\" + skill.name.lower().replace(" ", "") + "hit.ogg";
+		sound spell_snd;
+		sound pain_snd;
 		if (file_exists(spell_hit))
 		{
-			sound spell_snd;
 			spell_snd.load(spell_hit);
 			spell_snd.pan = int(target.position * 100.0f);
 			spell_snd.play();
-			while (spell_snd.playing) wait(5);
 		}
-
-		// Pain sound
 		if (!target.dead && target.def.pain_sound != "" && file_exists(target.def.pain_sound))
 		{
-			sound pain_snd;
 			pain_snd.load(target.def.pain_sound);
 			pain_snd.pan = int(target.position * 100.0f);
 			pain_snd.play();
-			while (pain_snd.playing) wait(5);
 		}
+		while (spell_snd.playing || pain_snd.playing) wait(5);
 
 		speak(skill.name + ". " + target.def.name + " takes " + string(dmg) + " damage.", true);
 		wait(300);
