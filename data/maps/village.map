@@ -1,0 +1,71 @@
+music:VILLAGE1.ogg
+door:26:26:52:52:data\maps\house.map:12:4:You return to your house.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+trigger:22:30:49:55:data\story\village_first_look.txt:once
+door:66:66:82:82:data\maps\miller_house.map:12:4:You step into Doran Miller's tidy cottage.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:114:114:90:90:data\maps\reed_house.map:12:4:You step into the Reed sisters' flower-scented home.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:162:162:82:82:data\maps\tanner_house.map:12:4:You enter the Tanner home, warm with herbs and soup.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:152:152:46:46:data\maps\mayor_house.map:25:4:You step into Mayor Holloway's sprawling house.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:34:34:20:20:data\maps\orphanage.map:39:20:You step into Yuri Orphanage, where every floorboard seems to remember a name.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:14:14:100:100:data\maps\worship_temple.map:14:2:You push through the stone temple door and into cool marble air.:misk\stonedoor.ogg:misk\stonedoor_activate.ogg:true:false
+door:174:174:20:20:data\maps\shopping_center.map:1:20:You step into the shopping center, where voices, coin, and worry all compete for the same room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:206:206:106:106:data\maps\village.map:204:106:The eastern gate stays shut.:misk\doorexit1.ogg:misk\dooractivate2.ogg:true:true:The exit from the village is locked due to strange events that might be related to the divine.
+object:94:100:88:92:A low stone well. The water echoes softly below.:objects\rock1.ogg:misk\bump_stone.ogg
+object:108:112:74:78:The village notice board is packed with supply requests, warnings, and a few personal messages folded twice.:objects\paper.ogg
+object:48:52:78:82:A stack of chopped logs waits beside a splitting stump.:objects\table.ogg
+object:10:14:94:98:A waist-high stone brazier burns in front of the temple steps, breathing out dry heat and old incense.:objects\rock1.ogg:misk\bump_stone.ogg
+object:38:40:18:20:A painted wooden sign reads Yuri Orphanage. Someone has tied a faded ribbon around one corner.:objects\paper.ogg
+object:164:168:18:20:A broad sign over the front reads Yuri Shopping Center in cheerful letters that have survived better years.:objects\paper.ogg
+object:184:188:104:108:A pair of village supply crates sit beside the eastern gate, half unpacked and left in a hurry.:objects\table.ogg
+object:42:42:76:76:"If you're looking for the temple, keep following the north road till the air starts smelling like incense.":objects\npc.ogg
+object:126:126:72:72:"The shopping center's all the way down in the southeast now. Nobody can say it's crowded anymore.":objects\npc.ogg
+object:156:156:76:76:"The mayor likes his distance. Can't say the rest of us mind.":objects\npc.ogg
+object:178:178:100:100:"Gate's shut. Captain says nobody leaves till we know what the divine wants. I didn't ask what a divine is, and neither should you.":objects\npc.ogg
+object:84:88:70:72:A weathered bench sits near the road, polished smooth by years of village gossip.:objects\bench.ogg
+object:134:136:72:74:A battered trashcan rattles in the breeze with every loose scrap inside.:objects\trashcan.ogg
+source:0:206:0:134:ambience\village1.ogg
+platform:0:206:0:134:concrete:Yuri village
+platform:14:36:40:52:dirt:Yuri village:1
+platform:18:170:74:80:dirt:Yuri village:1
+platform:22:28:52:80:dirt:Yuri village:1
+platform:80:86:20:124:dirt:Yuri village:1
+platform:130:136:20:80:dirt:Yuri village:1
+platform:18:86:118:124:dirt:Yuri village:1
+platform:136:174:18:24:dirt:Yuri village:1
+platform:164:206:102:108:dirt:Yuri village:1
+wall:0:206:134:134:fence:village
+wall:0:0:0:134:fence:village
+wall:206:206:0:134:fence:village
+wall:0:206:0:0:fence:village
+wall:20:20:52:64:building:house
+wall:32:32:52:64:building:house
+wall:20:32:52:52:building:house
+wall:20:32:64:64:building:house
+wall:60:60:82:94:building:house
+wall:72:72:82:94:building:house
+wall:60:72:82:82:building:house
+wall:60:72:94:94:building:house
+wall:108:108:90:102:building:house
+wall:120:120:90:102:building:house
+wall:108:120:90:90:building:house
+wall:108:120:102:102:building:house
+wall:156:156:82:94:building:house
+wall:168:168:82:94:building:house
+wall:156:168:82:82:building:house
+wall:156:168:94:94:building:house
+wall:140:140:46:70:building:house
+wall:164:164:46:70:building:house
+wall:140:164:46:46:building:house
+wall:140:164:70:70:building:house
+wall:2:2:4:36:building:orphanage
+wall:34:34:4:36:building:orphanage
+wall:2:34:4:4:building:orphanage
+wall:2:34:36:36:building:orphanage
+wall:2:2:100:132:building:temple
+wall:26:26:100:132:building:temple
+wall:2:26:100:100:building:temple
+wall:2:26:132:132:building:temple
+wall:174:174:4:34:building:shopping_center
+wall:206:206:4:34:building:shopping_center
+wall:174:206:4:4:building:shopping_center
+wall:174:206:34:34:building:shopping_center
+zone:0:206:0:134:Yuri village

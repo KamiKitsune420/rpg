@@ -1,0 +1,537 @@
+class key_repeat_state
+{
+	uint key;
+	uint initial_delay;
+	uint repeat_delay;
+	bool held = false;
+	bool repeated = false;
+	timer hold_timer;
+
+	key_repeat_state()
+	{
+		setup(0, 500, 40);
+	}
+
+	void setup(uint repeat_key, uint first_delay = 500, uint next_delay = 40)
+	{
+		key = repeat_key;
+		initial_delay = first_delay;
+		repeat_delay = next_delay;
+		held = false;
+		repeated = false;
+	}
+
+	bool pressing()
+	{
+		if (key_pressed(key))
+		{
+			held = true;
+			repeated = false;
+			hold_timer.restart();
+			return true;
+		}
+
+		if (!key_down(key))
+		{
+			held = false;
+			repeated = false;
+			return false;
+		}
+
+		if (!held)
+		{
+			held = true;
+			repeated = false;
+			hold_timer.restart();
+			return false;
+		}
+
+		uint delay = initial_delay;
+		if (repeated)
+			delay = repeat_delay;
+		if (hold_timer.elapsed < delay)
+			return false;
+
+		hold_timer.restart();
+		repeated = true;
+		return true;
+	}
+}
+
+enum text_input_caps_mode
+{
+	TEXT_INPUT_SPEAK_CAPS = 1,
+	TEXT_INPUT_BEEP_CAPS = 2,
+	TEXT_INPUT_IGNORE_CAPS = 3
+}
+
+class text_input
+{
+	string title;
+	string buffer;
+	uint cursor = 0;
+	bool passworded = false;
+	string mask = "*";
+	int max_length = 0;
+	bool repeat_characters = true;
+	bool allow_empty = true;
+	bool cancelled = false;
+	text_input_caps_mode caps_mode = TEXT_INPUT_SPEAK_CAPS;
+	string capital_sound_path = "";
+	sound capital;
+
+	key_repeat_state backspace_repeat;
+	key_repeat_state delete_repeat;
+	key_repeat_state left_repeat;
+	key_repeat_state right_repeat;
+
+	text_input()
+	{
+		backspace_repeat.setup(KEY_BACK, 500, 40);
+		delete_repeat.setup(KEY_DELETE, 500, 40);
+		left_repeat.setup(KEY_LEFT, 500, 40);
+		right_repeat.setup(KEY_RIGHT, 500, 40);
+		reset();
+	}
+
+	void reset()
+	{
+		title = "";
+		buffer = "";
+		cursor = 0;
+		passworded = false;
+		mask = "*";
+		max_length = 0;
+		repeat_characters = true;
+		allow_empty = true;
+		cancelled = false;
+		caps_mode = TEXT_INPUT_SPEAK_CAPS;
+	}
+
+	bool control_down()
+	{
+		return key_down(KEY_LCTRL) || key_down(KEY_RCTRL);
+	}
+
+	bool is_uppercase_letter(const string&in character)
+	{
+		return character.is_alphabetic() && character == character.upper() && character != character.lower();
+	}
+
+	string get_character_at(uint position)
+	{
+		if (position >= buffer.length())
+			return "";
+		return buffer.substr(position, 1);
+	}
+
+	string get_text() const property
+	{
+		return buffer;
+	}
+
+	string symbol_to_word(const string&in character)
+	{
+		if (character == "~") return "tilde";
+		if (character == "!") return "exclamation mark";
+		if (character == ",") return "comma";
+		if (character == ".") return "period";
+		if (character == "/") return "slash";
+		if (character == "@") return "at";
+		if (character == "#") return "number";
+		if (character == "$") return "dollar";
+		if (character == "%") return "percent";
+		if (character == "^") return "caret";
+		if (character == "&") return "ampersand";
+		if (character == "*") return "star";
+		if (character == "(") return "left parenthesis";
+		if (character == ")") return "right parenthesis";
+		if (character == "-") return "dash";
+		if (character == "_") return "underscore";
+		if (character == "=") return "equals";
+		if (character == "+") return "plus";
+		if (character == "`") return "grave accent";
+		if (character == "\t") return "tab";
+		if (character == "[") return "left bracket";
+		if (character == "]") return "right bracket";
+		if (character == "{") return "left brace";
+		if (character == "}") return "right brace";
+		if (character == "\\") return "backslash";
+		if (character == "|") return "bar";
+		if (character == ";") return "semicolon";
+		if (character == "\"") return "quote";
+		if (character == ":") return "colon";
+		if (character == "'") return "apostrophe";
+		if (character == "<") return "less than";
+		if (character == ">") return "greater than";
+		if (character == "?") return "question mark";
+		return character;
+	}
+
+	void announce_character(const string&in character, bool interrupt = true)
+	{
+		if (character == "")
+		{
+			speak("Blank", interrupt);
+			return;
+		}
+
+		if (passworded)
+		{
+			speak(mask, interrupt);
+			return;
+		}
+
+		if (character == " ")
+		{
+			speak("Space", interrupt);
+			return;
+		}
+
+		if (is_uppercase_letter(character))
+		{
+			if (caps_mode == TEXT_INPUT_SPEAK_CAPS)
+			{
+				speak("Cap " + character, interrupt);
+				return;
+			}
+
+			if (caps_mode == TEXT_INPUT_BEEP_CAPS)
+			{
+				if (capital_sound_path != "" && !capital.active)
+					capital.load(capital_sound_path);
+				if (capital.active)
+				{
+					capital.stop();
+					capital.play();
+				}
+				speak(character, interrupt);
+				return;
+			}
+		}
+
+		speak(symbol_to_word(character), interrupt);
+	}
+
+	void speak_character_at_cursor()
+	{
+		if (cursor >= buffer.length())
+		{
+			speak("Blank");
+			return;
+		}
+		announce_character(get_character_at(cursor));
+	}
+
+	void speak_character_before_cursor()
+	{
+		if (cursor == 0)
+		{
+			speak("Blank");
+			return;
+		}
+		announce_character(get_character_at(cursor - 1));
+	}
+
+	bool can_insert(uint char_count = 1)
+	{
+		return max_length <= 0 || int(buffer.length() + char_count) <= max_length;
+	}
+
+	bool insert_character(const string&in character, bool echo = true)
+	{
+		if (!can_insert())
+			return false;
+
+		buffer.insert(cursor, character);
+		cursor += character.length();
+		if (echo && repeat_characters)
+			announce_character(character);
+		return true;
+	}
+
+	bool insert_text(const string&in value, bool echo_summary = false)
+	{
+		if (value == "")
+			return false;
+
+		uint available = value.length();
+		if (max_length > 0 && int(buffer.length() + available) > max_length)
+			available = max_length - buffer.length();
+
+		if (available == 0)
+			return false;
+
+		string portion = value.substr(0, available);
+		buffer.insert(cursor, portion);
+		cursor += portion.length();
+
+		if (echo_summary)
+			speak("Pasted from clipboard.");
+		return true;
+	}
+
+	void delete_range(uint start, uint count)
+	{
+		buffer.erase(start, count);
+	}
+
+	void backspace_character()
+	{
+		if (cursor == 0 || buffer.length() == 0)
+			return;
+
+		string removed = get_character_at(cursor - 1);
+		delete_range(cursor - 1, 1);
+		cursor--;
+		announce_character(removed);
+	}
+
+	void delete_character()
+	{
+		if (cursor >= buffer.length() || buffer.length() == 0)
+			return;
+
+		string removed = get_character_at(cursor);
+		delete_range(cursor, 1);
+		announce_character(removed);
+	}
+
+	int find_next_word_start(uint from)
+	{
+		uint i = from;
+		while (i < buffer.length() && get_character_at(i) != " " && get_character_at(i) != "\n" && get_character_at(i) != "\r")
+			i++;
+		while (i < buffer.length() && (get_character_at(i) == " " || get_character_at(i) == "\n" || get_character_at(i) == "\r"))
+			i++;
+		if (i >= buffer.length())
+			return int(buffer.length());
+		return int(i);
+	}
+
+	int find_previous_word_start(uint from)
+	{
+		if (from == 0 || buffer.length() == 0)
+			return 0;
+
+		int i = int(from) - 1;
+		while (i > 0 && (get_character_at(i) == " " || get_character_at(i) == "\n" || get_character_at(i) == "\r"))
+			i--;
+		while (i > 0 && get_character_at(i - 1) != " " && get_character_at(i - 1) != "\n" && get_character_at(i - 1) != "\r")
+			i--;
+		return i;
+	}
+
+	string get_word_at(uint start)
+	{
+		if (start >= buffer.length())
+			return "";
+
+		string word;
+		uint i = start;
+		while (i < buffer.length())
+		{
+			string ch = get_character_at(i);
+			if (ch == " " || ch == "\n" || ch == "\r")
+				break;
+			word += ch;
+			i++;
+		}
+		return word;
+	}
+
+	void move_to_next_word()
+	{
+		cursor = find_next_word_start(cursor);
+		string word = get_word_at(cursor);
+		if (word == "")
+			speak("Blank");
+		else
+			speak(word);
+	}
+
+	void move_to_previous_word()
+	{
+		cursor = find_previous_word_start(cursor);
+		string word = get_word_at(cursor);
+		if (word == "")
+			speak("Blank");
+		else
+			speak(word);
+	}
+
+	void read_full_text()
+	{
+		if (buffer == "")
+			speak("Blank");
+		else if (passworded)
+			speak("Password field. " + string(buffer.length()) + " characters.");
+		else
+			speak(buffer);
+	}
+
+	void toggle_caps_mode()
+	{
+		if (caps_mode == TEXT_INPUT_SPEAK_CAPS)
+		{
+			caps_mode = TEXT_INPUT_BEEP_CAPS;
+			speak("Beep for uppercase letters.");
+			return;
+		}
+
+		if (caps_mode == TEXT_INPUT_BEEP_CAPS)
+		{
+			caps_mode = TEXT_INPUT_IGNORE_CAPS;
+			speak("Ignore uppercase letters.");
+			return;
+		}
+
+		caps_mode = TEXT_INPUT_SPEAK_CAPS;
+		speak("Speak uppercase letters.");
+	}
+
+	void toggle_repeat()
+	{
+		repeat_characters = !repeat_characters;
+		if (repeat_characters)
+			speak("Character repeat enabled");
+		else
+			speak("Character repeat disabled");
+	}
+
+	string input(string ttl, string default_text = "", bool uses_password = false, string mask_char = "*", int txtlength = 0)
+	{
+		reset();
+		title = ttl;
+		passworded = uses_password;
+		if (mask_char == "")
+			mask = "*";
+		else
+			mask = mask_char;
+		max_length = txtlength;
+		cancelled = false;
+		buffer = default_text;
+		cursor = buffer.length();
+
+		speak(title, true);
+
+		while (true)
+		{
+			wait(5);
+
+			string typed = get_characters();
+			for (uint i = 0; i < typed.length(); i++)
+			{
+				string ch = typed.substr(i, 1);
+				insert_character(ch, true);
+			}
+
+			if (key_pressed(KEY_TAB))
+				speak(title, true);
+
+			if (key_pressed(KEY_F1))
+				toggle_caps_mode();
+
+			if (key_pressed(KEY_F2))
+				toggle_repeat();
+
+			if (key_pressed(KEY_UP) || key_pressed(KEY_DOWN))
+				read_full_text();
+
+			if (control_down())
+			{
+				if (key_pressed(KEY_C))
+				{
+					if (buffer != "")
+					{
+						clipboard_set_text(buffer);
+						speak("Copied to clipboard.");
+					}
+				}
+
+				if (key_pressed(KEY_X))
+				{
+					if (buffer != "")
+					{
+						clipboard_set_text(buffer);
+						buffer = "";
+						cursor = 0;
+						speak("Cut to clipboard.");
+					}
+				}
+
+				if (key_pressed(KEY_V))
+				{
+					if (!insert_text(clipboard_get_text(), true))
+						speak("Nothing pasted.");
+				}
+			}
+
+			if (key_pressed(KEY_HOME))
+			{
+				cursor = 0;
+				speak("Start");
+			}
+
+			if (key_pressed(KEY_END))
+			{
+				cursor = buffer.length();
+				speak("End");
+			}
+
+			if (right_repeat.pressing())
+			{
+				if (control_down())
+					move_to_next_word();
+				else if (cursor < buffer.length())
+				{
+					cursor++;
+					speak_character_before_cursor();
+				}
+			}
+
+			if (left_repeat.pressing())
+			{
+				if (control_down())
+					move_to_previous_word();
+				else if (cursor > 0)
+				{
+					cursor--;
+					speak_character_at_cursor();
+				}
+			}
+
+			if (backspace_repeat.pressing())
+			{
+				if (control_down() && buffer != "")
+				{
+					buffer = "";
+					cursor = 0;
+					speak("Cleared text.");
+				}
+				else
+				{
+					backspace_character();
+				}
+			}
+
+			if (delete_repeat.pressing())
+				delete_character();
+
+			if (key_pressed(KEY_RETURN))
+			{
+				if (!allow_empty && buffer == "")
+					continue;
+				return buffer;
+			}
+
+			if (key_pressed(KEY_ESCAPE))
+			{
+				cancelled = true;
+				return "";
+			}
+		}
+
+		return "";
+	}
+}

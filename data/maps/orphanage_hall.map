@@ -1,0 +1,23 @@
+music:village1.ogg
+zone:0:20:0:80:Yuri orphanage hall
+platform:0:20:0:80:hardwood:Yuri orphanage hall
+wall:0:20:80:80:wood:hall
+wall:0:0:0:80:wood:hall
+wall:20:20:0:80:wood:hall
+wall:0:20:0:0:wood:hall
+object:8:12:52:54:A narrow table holds spare candles, a handbell, and a list of chores rewritten too many times.:objects\table.ogg
+object:6:10:30:32:"Matron says the hall echoes because it listens. I think she just wants us not to run in it.":objects\npc.ogg
+door:10:10:0:0:data\maps\orphanage.map:2:39:You step back into the common room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:0:0:12:12:data\maps\orphan_room1.map:7:1:You slip into the first orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:20:20:12:12:data\maps\orphan_room2.map:7:1:You slip into the second orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:0:0:24:24:data\maps\orphan_room3.map:7:1:You slip into the third orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:20:20:24:24:data\maps\orphan_room5.map:7:1:You slip into the fifth orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:0:0:36:36:data\maps\orphan_room7.map:7:1:You slip into the seventh orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:20:20:36:36:data\maps\orphan_room8.map:7:1:You slip into the eighth orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:0:0:48:48:data\maps\orphan_room10.map:7:1:You slip into the tenth orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:20:20:48:48:data\maps\orphan_room11.map:7:1:You slip into the eleventh orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:0:0:60:60:data\maps\orphanage_hall.map:1:60:This side room is locked.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:true:The room on the left is locked.
+door:20:20:60:60:data\maps\orphanage_hall.map:19:60:This side room is locked.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:true:The room on the right is locked.
+door:0:0:70:70:data\maps\orphanage_hall.map:1:70:This side room is locked.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:true:The room on the left is locked.
+door:20:20:70:70:data\maps\orphanage_hall.map:19:70:This side room is locked.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:true:The room on the right is locked.
+door:10:10:80:80:data\maps\orphanage_hall.map:10:79:The emergency exit is locked.:misk\doorexit1.ogg:misk\dooractivate2.ogg:true:true:The emergency exit is locked from the inside.

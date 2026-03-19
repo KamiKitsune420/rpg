@@ -1,0 +1,573 @@
+#include "includes/sound_pool.nvgt"
+#include "includes/speech.nvgt"
+#include "includes/music_system.nvgt"
+#include "includes/savedata.nvgt"
+#include "includes/player.nvgt"
+#include "includes/inventory.nvgt"
+#include "includes/quests.nvgt"
+#include "includes/fanfare.nvgt"
+#include "includes/src.nvgt"
+#include "includes/collider.nvgt"
+#include "includes/fadepool.nvgt"
+#include "includes/menu.nvgt"
+#include "includes/object.nvgt"
+#include "includes/door.nvgt"
+#include "includes/map.nvgt"
+#include "includes/mapfuncts.nvgt"
+#include "includes/wall_tones.nvgt"
+#include "includes/items.nvgt"
+#include "includes/shop.nvgt"
+#include "includes/scene_manager.nvgt"
+#include "includes/enemies.nvgt"
+#include "includes/battle.nvgt"
+#include "includes/new_game.nvgt"
+
+sound_pool p;
+sound_pool objpool;
+sound_pool doorpool;
+music_system music;
+game_map gm;
+wall_tones wt(3);
+vector me;
+string current_zone = "";
+string current_map_path = "";
+bool game_running = true;
+bool in_world = false;
+timer walktimer;
+int walkspeed = 230;
+string facing = "down";
+player_character player;
+inventory_system inventory;
+quest_log quests;
+fanfare_system fanfare;
+scene_manager scene;
+timer play_time_timer;
+int stored_play_time_seconds = 0;
+string save_file_path = "savegame.dat";
+string[] collected_item_keys;
+string[] flag_names;
+string[] flag_values;
+
+bool has_flag(string name)
+{
+	for (uint i = 0; i < flag_names.length(); i++)
+		if (flag_names[i] == name) return flag_values[i] == "1";
+	return false;
+}
+
+string get_flag(string name)
+{
+	for (uint i = 0; i < flag_names.length(); i++)
+		if (flag_names[i] == name) return flag_values[i];
+	return "";
+}
+
+void set_flag(string name, string value = "1")
+{
+	for (uint i = 0; i < flag_names.length(); i++)
+	{
+		if (flag_names[i] == name)
+		{
+			flag_values[i] = value;
+			return;
+		}
+	}
+	flag_names.insert_last(name);
+	flag_values.insert_last(value);
+}
+
+void clear_flag(string name)
+{
+	for (uint i = 0; i < flag_names.length(); i++)
+	{
+		if (flag_names[i] == name)
+		{
+			flag_names.remove_at(i);
+			flag_values.remove_at(i);
+			return;
+		}
+	}
+}
+
+bool is_item_collected(string key)
+{
+	for (uint i = 0; i < collected_item_keys.length(); i++)
+		if (collected_item_keys[i] == key) return true;
+	return false;
+}
+
+void mark_item_collected(string key)
+{
+	if (!is_item_collected(key))
+		collected_item_keys.insert_last(key);
+}
+
+string[] map_visit_keys;
+int[] map_visit_counts;
+
+int get_map_visits(string map_path)
+{
+	for (uint i = 0; i < map_visit_keys.length(); i++)
+		if (map_visit_keys[i] == map_path) return map_visit_counts[i];
+	return 0;
+}
+
+void record_map_visit(string map_path)
+{
+	for (uint i = 0; i < map_visit_keys.length(); i++)
+	{
+		if (map_visit_keys[i] == map_path)
+		{
+			map_visit_counts[i]++;
+			return;
+		}
+	}
+	map_visit_keys.insert_last(map_path);
+	map_visit_counts.insert_last(1);
+}
+
+string[] object_interact_keys;
+int[] object_interact_counts;
+
+int get_object_interactions(string key)
+{
+	for (uint i = 0; i < object_interact_keys.length(); i++)
+		if (object_interact_keys[i] == key) return object_interact_counts[i];
+	return 0;
+}
+
+void record_object_interaction(string key)
+{
+	for (uint i = 0; i < object_interact_keys.length(); i++)
+	{
+		if (object_interact_keys[i] == key)
+		{
+			object_interact_counts[i]++;
+			return;
+		}
+	}
+	object_interact_keys.insert_last(key);
+	object_interact_counts.insert_last(1);
+}
+
+void save_game_state()
+{
+	savedata save(save_file_path);
+	save.add("player_name", player.name);
+	save.add("current_map", current_map_path);
+	save.add("player_x", int(me.x));
+	save.add("player_y", int(me.y));
+	save.add("player_level", player.level);
+	save.add("player_strength", player.strength);
+	save.add("player_defense", player.defense);
+	save.add("player_wisdom", player.wisdom);
+	save.add("player_intelligence", player.intelligence);
+	save.add("player_luck", player.luck);
+	save.add("player_vitality", player.vitality);
+	save.add("player_stamina", player.stamina);
+	save.add("player_speed", player.speed);
+	save.add("player_current_hp", player.current_hp);
+	save.add("player_current_mana", player.current_mana);
+	save.add("player_gold", player.gold);
+	save.add("player_exp", player.exp);
+	save.add("play_time_seconds", stored_play_time_seconds + int(play_time_timer.elapsed / 1000));
+
+	save.add("inventory_count", int(inventory.items.length()));
+	for (uint i = 0; i < inventory.items.length(); i++)
+	{
+		string key = "inventory_" + string(i);
+		string value = inventory.items[i].id + "||" + inventory.items[i].name + "||" + inventory.items[i].description + "||" + string(inventory.items[i].quantity);
+		save.add(key, value);
+	}
+
+	save.add("quest_count", int(quests.quests.length()));
+	for (uint i = 0; i < quests.quests.length(); i++)
+	{
+		string key = "quest_" + string(i);
+		string value = quests.quests[i].id + "||" + quests.quests[i].name + "||" + quests.quests[i].description + "||" + quests.quests[i].requirements + "||" + string(quests.quests[i].percent_completed) + "||" + (quests.quests[i].hidden ? "1" : "0");
+		save.add(key, value);
+	}
+
+	save.add("collected_items_count", int(collected_item_keys.length()));
+	for (uint i = 0; i < collected_item_keys.length(); i++)
+		save.add("collected_item_" + string(i), collected_item_keys[i]);
+
+	save.add("flags_count", int(flag_names.length()));
+	for (uint i = 0; i < flag_names.length(); i++)
+	{
+		save.add("flag_name_" + string(i), flag_names[i]);
+		save.add("flag_value_" + string(i), flag_values[i]);
+	}
+
+	save.add("map_visits_count", int(map_visit_keys.length()));
+	for (uint i = 0; i < map_visit_keys.length(); i++)
+	{
+		save.add("map_visit_key_" + string(i), map_visit_keys[i]);
+		save.add("map_visit_count_" + string(i), map_visit_counts[i]);
+	}
+
+	save.add("obj_interactions_count", int(object_interact_keys.length()));
+	for (uint i = 0; i < object_interact_keys.length(); i++)
+	{
+		save.add("obj_interact_key_" + string(i), object_interact_keys[i]);
+		save.add("obj_interact_count_" + string(i), object_interact_counts[i]);
+	}
+
+	save.save();
+	int save_slot = p.play_stationary("sounds\\ui\\savegame.ogg", false);
+	if (save_slot >= 0)
+	{
+		while (@p.items[save_slot].handle != null && p.items[save_slot].handle.playing)
+			wait(10);
+	}
+	dlg_show("Game saved.");
+}
+
+bool load_game_state()
+{
+	if (!file_exists(save_file_path))
+		return false;
+
+	savedata save(save_file_path);
+p.play_stationary("sounds/ui/loading.ogg",false);
+wait(1000);
+	save.load();
+
+	player.reset(save.read_string("player_name"));
+	player.level = save.read_int("player_level");
+	player.strength = save.read_int("player_strength");
+	player.defense = save.read_int("player_defense");
+	player.wisdom = save.read_int("player_wisdom");
+	player.intelligence = save.read_int("player_intelligence");
+	player.luck = save.read_int("player_luck");
+	player.vitality = save.read_int("player_vitality");
+	player.stamina = save.read_int("player_stamina");
+	player.speed = save.read_int("player_speed");
+	player.current_hp = save.read_int("player_current_hp");
+	player.current_mana = save.read_int("player_current_mana");
+	if (player.current_hp <= 0) player.current_hp = player.hp;
+	if (player.current_mana <= 0) player.current_mana = player.mana;
+	player.gold = save.read_int("player_gold");
+	player.exp = save.read_int("player_exp");
+	grant_starting_skills(false);
+
+	inventory.clear();
+	int inventory_count = save.read_int("inventory_count");
+	for (int i = 0; i < inventory_count; i++)
+	{
+		string[] parts = save.read_string("inventory_" + string(i)).split("||");
+		if (parts.length() < 4)
+			continue;
+		inventory.add_item(parts[0], parts[1], parts[2], parse_int(parts[3]));
+	}
+
+	quests.clear();
+	int quest_count = save.read_int("quest_count");
+	for (int i = 0; i < quest_count; i++)
+	{
+		string[] parts = save.read_string("quest_" + string(i)).split("||");
+		if (parts.length() < 5)
+			continue;
+		bool hidden = parts.length() > 5 && parts[5] == "1";
+		quests.add_quest(parts[0], parts[1], parts[2], parts[3], parse_int(parts[4]), hidden);
+	}
+
+	collected_item_keys.resize(0);
+	int collected_items_count = save.read_int("collected_items_count");
+	for (int i = 0; i < collected_items_count; i++)
+		collected_item_keys.insert_last(save.read_string("collected_item_" + string(i)));
+
+	flag_names.resize(0);
+	flag_values.resize(0);
+	int flags_count = save.read_int("flags_count");
+	for (int i = 0; i < flags_count; i++)
+	{
+		flag_names.insert_last(save.read_string("flag_name_" + string(i)));
+		flag_values.insert_last(save.read_string("flag_value_" + string(i)));
+	}
+
+	map_visit_keys.resize(0);
+	map_visit_counts.resize(0);
+	int map_visits_count = save.read_int("map_visits_count");
+	for (int i = 0; i < map_visits_count; i++)
+	{
+		map_visit_keys.insert_last(save.read_string("map_visit_key_" + string(i)));
+		map_visit_counts.insert_last(save.read_int("map_visit_count_" + string(i)));
+	}
+
+	object_interact_keys.resize(0);
+	object_interact_counts.resize(0);
+	int obj_interactions_count = save.read_int("obj_interactions_count");
+	for (int i = 0; i < obj_interactions_count; i++)
+	{
+		object_interact_keys.insert_last(save.read_string("obj_interact_key_" + string(i)));
+		object_interact_counts.insert_last(save.read_int("obj_interact_count_" + string(i)));
+	}
+
+	current_map_path = save.read_string("current_map");
+	if (current_map_path == "")
+		current_map_path = "data\\maps\\house.map";
+	if (!gm.load_map(current_map_path))
+		return false;
+	record_map_visit(current_map_path);
+	music.sync_map_music(gm.music_path);
+	me.x = save.read_int("player_x");
+	me.y = save.read_int("player_y");
+	me.z = 0;
+	current_zone = "";
+	check_zone();
+	wt.update(gm, me.x, me.y);
+	stored_play_time_seconds = save.read_int("play_time_seconds");
+	play_time_timer.restart();
+	player_name = player.name;
+	return true;
+}
+
+void show_description(string description)
+{
+	speak(description);
+}
+
+void notify_new_skill(player_skill@ skill)
+{
+	if (@skill == null)
+		return;
+	fanfare.play("sounds\\Fanfare\\new_skill.ogg", @music);
+	dlg_show("You have just learned the skill " + skill.name + "!");
+	mdlg(skill.description);
+}
+
+void grant_starting_skills(bool announce = true)
+{
+	player.skills.resize(0);
+	player.add_skill("Fireball", "The user shapes fire mana into a simple ball and propells it twards the enamy. this is the simplest form of fire manipulation", 1, true, false, 15);
+	if (announce) notify_new_skill(@player.skills[player.skills.length() - 1]);
+	player.add_skill("Water Sphere", "the user compresses water mana into a Sphere then propells it twards the enamy. the longer it charges, the more dammage it does. this is the simplest form of Water manipulation.", 1, true, false, 12);
+	if (announce) notify_new_skill(@player.skills[player.skills.length() - 1]);
+	player.add_skill("Concentrate", "the user Focuses there intent. increases magic attack by one stage", 1, true, false, 0);
+	if (announce) notify_new_skill(@player.skills[player.skills.length() - 1]);
+	player.add_skill("?a.afwrf4a.>?", "ERROR (player.nvgt:67): undefined reference 'soul_fragment' in player_character::add_skill(). ERROR (game.nvgt:171): null pointer access in grant_starting_skills(). WARN: skill descriptor corrupted beyond recovery. soul integrity: CRITICAL. mind coherence: 3%. this cannot be learned. this cannot be unlearned.", 1, false, false, 0);
+	if (announce) notify_new_skill(@player.skills[player.skills.length() - 1]);
+}
+
+void update_world()
+{
+	if (key_pressed(KEY_TAB))
+	{
+		open_journey_menu();
+		return;
+	}
+
+	if (key_pressed(KEY_C) && !SCRIPT_COMPILED)
+		speak(me.x + ", " + me.y + ", " + me.z);
+
+	if (key_pressed(KEY_R))
+	{
+		string zone_name = gm.zone_at(me.x, me.y, me.z);
+		if (zone_name != "")
+			speak("Current location: " + zone_name);
+	}
+
+	if (key_pressed(KEY_G))
+		speak("Gold. " + string(player.gold), true);
+
+	if (key_pressed(KEY_L))
+	{
+		if (key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT))
+			speak(player.name + " has " + string(player.exp) + " experience points. " + string(player.exp_to_next_level - player.exp) + " experience points needed to reach the next level.", true);
+		else
+			speak("Level " + string(player.level), true);
+	}
+
+	if (key_pressed(KEY_H))
+		speak("HP " + string(player.current_hp) + " of " + string(player.hp), true);
+
+	if (key_pressed(KEY_T))
+		speak(format_play_time(stored_play_time_seconds + int(play_time_timer.elapsed / 1000)), true);
+
+	if (key_pressed(KEY_RETURN))
+		interact_last_collider(me.x, me.y);
+
+	if (key_down(KEY_LEFT) && walktimer.elapsed >= walkspeed)
+	{
+		facing = "left";
+		if (bump_collider(me.x - 1, me.y))
+		{
+		}
+		else if (door_at(me.x - 1, me.y))
+		{
+			me.x -= 1;
+		}
+		else if (gm.is_wall(me.x - 1, me.y, me.z))
+		{
+			playstep(me.x - 1, me.y, true);
+		}
+		else
+		{
+			me.x -= 1;
+			playstep(me.x, me.y);
+			check_zone();
+		}
+		wt.update(gm, me.x, me.y);
+		walktimer.restart();
+	}
+
+	if (key_down(KEY_RIGHT) && walktimer.elapsed >= walkspeed)
+	{
+		facing = "right";
+		if (bump_collider(me.x + 1, me.y))
+		{
+		}
+		else if (door_at(me.x + 1, me.y))
+		{
+			me.x += 1;
+		}
+		else if (gm.is_wall(me.x + 1, me.y, me.z))
+		{
+			playstep(me.x + 1, me.y, true);
+		}
+		else
+		{
+			me.x += 1;
+			playstep(me.x, me.y);
+			check_zone();
+		}
+		wt.update(gm, me.x, me.y);
+		walktimer.restart();
+	}
+
+	if (key_down(KEY_UP) && walktimer.elapsed >= walkspeed)
+	{
+		facing = "up";
+		if (bump_collider(me.x, me.y + 1))
+		{
+		}
+		else if (door_at(me.x, me.y + 1))
+		{
+			me.y += 1;
+		}
+		else if (gm.is_wall(me.x, me.y + 1, me.z))
+		{
+			playstep(me.x, me.y + 1, true);
+		}
+		else
+		{
+			me.y += 1;
+			playstep(me.x, me.y);
+			check_zone();
+		}
+		wt.update(gm, me.x, me.y);
+		walktimer.restart();
+	}
+
+	if (key_down(KEY_DOWN) && walktimer.elapsed >= walkspeed)
+	{
+		facing = "down";
+		if (bump_collider(me.x, me.y - 1))
+		{
+		}
+		else if (door_at(me.x, me.y - 1))
+		{
+			me.y -= 1;
+		}
+		else if (gm.is_wall(me.x, me.y - 1, me.z))
+		{
+			playstep(me.x, me.y - 1, true);
+		}
+		else
+		{
+			me.y -= 1;
+			playstep(me.x, me.y);
+			check_zone();
+		}
+		wt.update(gm, me.x, me.y);
+		walktimer.restart();
+	}
+
+	travelcheck();
+	sourcecheckloop();
+	update_audio_listener();
+	update_quest_progress();
+	check_triggers(int(me.x), int(me.y));
+	check_battle_zones(int(me.x), int(me.y));
+}
+
+void setup_systems()
+{
+	show_window("RPG");
+	set_sound_global_hrtf(false);
+	wt.set_files("sounds\\sonar\\wall_west.ogg", "sounds\\sonar\\wall_east.ogg", "sounds\\sonar\\wall_north.ogg", "sounds\\sonar\\wall_south.ogg");
+	wt.start();
+	me.x = 0;
+	me.y = 0;
+	me.z = 0;
+	player.reset("Traveler");
+	inventory.clear();
+	quests.clear();
+	stored_play_time_seconds = 0;
+	play_time_timer.restart();
+	collected_item_keys.resize(0);
+	flag_names.resize(0);
+	flag_values.resize(0);
+	map_visit_keys.resize(0);
+	map_visit_counts.resize(0);
+	object_interact_keys.resize(0);
+	object_interact_counts.resize(0);
+	register_items();
+	register_enemies();
+}
+
+void run_game()
+{
+	setup_systems();
+
+	while (game_running)
+	{
+		string menu_choice = run_main_menu();
+		if (menu_choice == "quit")
+		{
+			main_menu.stop_music();
+			game_running = false;
+			break;
+		}
+
+		main_menu.stop_music();
+		if (menu_choice == "load")
+		{
+			if (!load_game_state())
+			{
+				dlg_show("Unable to load the saved game.");
+				continue;
+			}
+		}
+		else
+		{
+			start_new_game();
+			stored_play_time_seconds = 0;
+			play_time_timer.restart();
+		}
+		in_world = true;
+		update_audio_listener();
+
+		while (in_world && game_running)
+		{
+			wait(5);
+			update_world();
+
+			if (key_pressed(KEY_ESCAPE))
+			{
+				fade_multi_pool(1);
+				music.fade_out_and_stop();
+				pause_all_sources();
+				wt.stop();
+				in_world = false;
+				speak("Returned to main menu.");
+			}
+		}
+	}
+}
+
+void main()
+{
+	run_game();
+}

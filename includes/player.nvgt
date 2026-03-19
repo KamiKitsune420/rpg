@@ -1,0 +1,151 @@
+class player_skill
+{
+	string name;
+	string description;
+	int level;
+	int base_power;
+	bool battle_usable;
+	bool outside_battle_usable;
+
+	player_skill()
+	{
+		name = "";
+		description = "";
+		level = 0;
+		base_power = 0;
+		battle_usable = true;
+		outside_battle_usable = false;
+	}
+
+	player_skill(string skill_name, string skill_description, int skill_level = 1, bool can_use_in_battle = true, bool can_use_outside_battle = false, int power = 0)
+	{
+		name = skill_name;
+		description = skill_description;
+		level = skill_level;
+		base_power = power;
+		battle_usable = can_use_in_battle;
+		outside_battle_usable = can_use_outside_battle;
+	}
+}
+
+class player_character
+{
+	string name;
+	int level;
+	int strength;
+	int defense;
+	int wisdom;
+	int intelligence;
+	int luck;
+	int vitality;
+	int stamina;
+	int speed;
+	int current_hp;
+	int current_mana;
+	int gold;
+	int exp;
+	player_skill[] skills;
+
+	player_character()
+	{
+		reset("Traveler");
+	}
+
+	void reset(string player_name)
+	{
+		name = player_name;
+		level = 1;
+		gold = 0;
+		exp = 0;
+		reset_base_stats();
+		skills.resize(0);
+		current_hp = hp;
+		current_mana = mana;
+	}
+
+	void restore_to_full()
+	{
+		current_hp = hp;
+		current_mana = mana;
+	}
+
+	void reset_base_stats()
+	{
+		strength = 5;
+		defense = 5;
+		wisdom = 5;
+		intelligence = 5;
+		luck = 5;
+		vitality = 5;
+		stamina = 5;
+		speed = 5;
+	}
+
+	void add_skill(string skill_name, string skill_description, int skill_level = 1, bool can_use_in_battle = true, bool can_use_outside_battle = false, int base_power = 0)
+	{
+		skills.insert_last(player_skill(skill_name, skill_description, skill_level, can_use_in_battle, can_use_outside_battle, base_power));
+	}
+
+	int get_exp_to_next_level() property
+	{
+		return level * 100;
+	}
+
+	int get_hp() property
+	{
+		return strength * vitality + intelligence;
+	}
+
+	int get_attack() property
+	{
+		return strength * 2 + level;
+	}
+
+	int get_magic_attack() property
+	{
+		return (intelligence + wisdom) * 2 + level;
+	}
+
+	int get_mana() property
+	{
+		return (intelligence + wisdom) * 5 + stamina * 2;
+	}
+
+	string stat_name(int idx)
+	{
+		if (idx == 0) return "Strength";
+		if (idx == 1) return "Defense";
+		if (idx == 2) return "Wisdom";
+		if (idx == 3) return "Intelligence";
+		if (idx == 4) return "Luck";
+		if (idx == 5) return "Vitality";
+		if (idx == 6) return "Stamina";
+		if (idx == 7) return "Speed";
+		return "";
+	}
+
+	int stat_value(int idx)
+	{
+		if (idx == 0) return strength;
+		if (idx == 1) return defense;
+		if (idx == 2) return wisdom;
+		if (idx == 3) return intelligence;
+		if (idx == 4) return luck;
+		if (idx == 5) return vitality;
+		if (idx == 6) return stamina;
+		if (idx == 7) return speed;
+		return 0;
+	}
+
+	void set_stat_value(int idx, int value)
+	{
+		if (idx == 0) strength = value;
+		else if (idx == 1) defense = value;
+		else if (idx == 2) wisdom = value;
+		else if (idx == 3) intelligence = value;
+		else if (idx == 4) luck = value;
+		else if (idx == 5) vitality = value;
+		else if (idx == 6) stamina = value;
+		else if (idx == 7) speed = value;
+	}
+}

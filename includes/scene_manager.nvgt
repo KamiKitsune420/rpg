@@ -1,0 +1,927 @@
+#include "text_input.nvgt"
+
+class scene_fade_state
+{
+	bool active = false;
+	int target_volume = 0;
+	int step_delay = 0;
+	timer step_timer;
+
+	void start(int target, int delay)
+	{
+		active = true;
+		target_volume = target;
+		step_delay = delay;
+		if (step_delay < 1)
+			step_delay = 1;
+		step_timer.restart();
+	}
+
+	void stop()
+	{
+		active = false;
+	}
+}
+
+class scene_manager
+{
+	dictionary variables;
+	string script_path;
+	string scene_folder;
+	string sounds_folder;
+	string last_text = "";
+	int music_volume = 0;
+	int ambient_volume = 0;
+	int music_min_volume = -50;
+	int music_max_volume = 0;
+	sound story_sound;
+	sound music_sound;
+	sound ambient_sound;
+	array<sound@> active_sounds(0);
+	scene_fade_state music_fade;
+	scene_fade_state ambient_fade;
+	text_input writer;
+	key_repeat_state question_up;
+	key_repeat_state question_down;
+	int skip_lines_remaining;
+
+	scene_manager()
+	{
+		question_up.setup(KEY_UP, 500, 60);
+		question_down.setup(KEY_DOWN, 500, 60);
+	}
+
+	void clear_variables()
+	{
+		variables.delete_all();
+	}
+
+	void set_variable(string name, string value)
+	{
+		variables.set(name, value);
+	}
+
+	bool play(string path)
+	{
+		reset();
+		script_path = path;
+		scene_folder = get_parent_path(path);
+		sounds_folder = "sounds";
+		load_story_sound();
+		pause_world_audio();
+
+		file f;
+		if (!f.open(path, "r"))
+		{
+			resume_world_audio();
+			return false;
+		}
+
+		array<string> lines;
+		while (!f.eof)
+			lines.insert_last(f.read_line().trim_whitespace());
+		f.close();
+
+		int idx = 0;
+		while (idx < int(lines.length()))
+		{
+			update_runtime();
+			if (!execute_at(lines, idx))
+				break;
+		}
+
+		stop_all_audio();
+		resume_world_audio();
+		return true;
+	}
+
+	void reset()
+	{
+		script_path = "";
+		scene_folder = "";
+		sounds_folder = "sounds";
+		last_text = "";
+		music_volume = 0;
+		ambient_volume = 0;
+		skip_lines_remaining = 0;
+		music_fade.stop();
+		ambient_fade.stop();
+		stop_all_audio();
+		active_sounds.resize(0);
+	}
+
+	string get_parent_path(string path)
+	{
+		int slash = path.find_last("\\");
+		int slash2 = path.find_last("/");
+		if (slash2 > slash)
+			slash = slash2;
+		if (slash < 0)
+			return "";
+		return path.substr(0, slash);
+	}
+
+	string resolve_asset_path(string filename)
+	{
+		if (filename.find(":") == 1)
+			return filename;
+		if (filename.starts_with("\\") || filename.starts_with("/"))
+			return filename;
+		if (filename.lower().ends_with(".wav"))
+			filename = filename.substr(0, filename.length() - 4) + ".ogg";
+		if (sounds_folder != "")
+			return sounds_folder + "\\" + filename;
+		return filename;
+	}
+
+	void load_story_sound()
+	{
+		string story_ogg = "sounds\\ui\\story.ogg";
+		if (file_exists(story_ogg))
+			story_sound.load(story_ogg);
+	}
+
+	string trim_quotes(string value)
+	{
+		if (value.length() >= 2 && value.substr(0, 1) == "\"" && value.substr(value.length() - 1, 1) == "\"")
+			return value.substr(1, value.length() - 2);
+		return value;
+	}
+
+	bool execute_at(array<string>@ lines, int &inout idx)
+	{
+		string raw_line = lines[idx++];
+
+		if (raw_line == "")
+			return true;
+		if (raw_line.starts_with("//") || raw_line.starts_with("#") || raw_line.starts_with(";"))
+			return true;
+
+		string command;
+		string args;
+		split_command(raw_line, command, args);
+		command = command.lower();
+		args = apply_variables(args);
+
+		bool is_text_line = command == "text" || command == "say" || command == "saytext";
+		if (skip_lines_remaining > 0)
+		{
+			if (is_text_line)
+			{
+				skip_lines_remaining--;
+				return true;
+			}
+			else
+			{
+				skip_lines_remaining = 0;
+			}
+		}
+
+		if (command == "if")
+		{
+			if (!evaluate_condition(args))
+				seek_else_or_end(lines, idx);
+			return true;
+		}
+		if (command == "elseif" || command == "else")
+		{
+			// Reached here inside a true branch — skip to matching end
+			seek_end(lines, idx);
+			return true;
+		}
+		if (command == "end")
+			return true;
+		if (command == "set_flag")
+		{
+			array<string>@ tokens = parse_quoted_tokens(args);
+			if (tokens.length() >= 2)
+				set_flag(tokens[0], tokens[1]);
+			else if (tokens.length() == 1)
+				set_flag(tokens[0]);
+			return true;
+		}
+		if (command == "clear_flag")
+		{
+			clear_flag(args.trim_whitespace());
+			return true;
+		}
+		if (command == "give_gold")
+		{
+			gain_gold(parse_int(args), true);
+			return true;
+		}
+		if (command == "spawn_item")
+		{
+			run_spawn_item(args);
+			return true;
+		}
+		if (command == "text")
+			return run_text(args, true, true);
+		if (command == "say")
+		{
+			last_text = args;
+			speak(args, true);
+			return true;
+		}
+		if (command == "saytext")
+			return run_text(args, false, true);
+		if (command == "wait")
+		{
+			wait_command(parse_int(args));
+			return true;
+		}
+		if (command == "play")
+		{
+			run_play(args);
+			return true;
+		}
+		if (command == "playwait")
+		{
+			run_play(args, true);
+			return true;
+		}
+		if (command == "stop")
+		{
+			stop_play_sounds();
+			return true;
+		}
+		if (command == "music")
+		{
+			start_music(args);
+			return true;
+		}
+		if (command == "musicfadein")
+		{
+			if (music_sound.active && music_volume >= 0)
+			{
+				music_volume = music_min_volume;
+				music_sound.volume = music_volume;
+			}
+			music_fade.start(0, parse_int(args));
+			return true;
+		}
+		if (command == "musicfadeout")
+		{
+			music_fade.start(music_min_volume, parse_int(args));
+			return true;
+		}
+		if (command == "musicstop")
+		{
+			music_sound.stop();
+			music_fade.stop();
+			return true;
+		}
+		if (command == "amb")
+		{
+			start_ambient(args);
+			return true;
+		}
+		if (command == "ambvolume")
+		{
+			ambient_volume = parse_int(args);
+			ambient_sound.volume = ambient_volume;
+			return true;
+		}
+		if (command == "ambfadein")
+		{
+			ambient_fade.start(0, parse_int(args));
+			return true;
+		}
+		if (command == "ambfadeout")
+		{
+			ambient_fade.start(music_min_volume, parse_int(args));
+			return true;
+		}
+		if (command == "ambstop")
+		{
+			ambient_sound.stop();
+			ambient_fade.stop();
+			return true;
+		}
+		if (command == "write")
+		{
+			run_write(args);
+			return true;
+		}
+		if (command == "writerequired")
+		{
+			run_write_required(args);
+			return true;
+		}
+		if (command == "question")
+		{
+			run_question(args);
+			return true;
+		}
+		if (command == "quest")
+		{
+			run_quest(args);
+			return true;
+		}
+		if (command == "give_item")
+		{
+			run_give_item(args);
+			return true;
+		}
+		if (command == "answer")
+			return run_answer_at(args);
+		if (command == "vibration")
+			return true;
+		if (command == "stop_scene")
+			return false;
+
+		return true;
+	}
+
+	// When condition is false: scan forward to the matching else/elseif/end.
+	// Handles elseif chains and nested if/end pairs.
+	void seek_else_or_end(array<string>@ lines, int &inout idx)
+	{
+		int depth = 0;
+		while (idx < int(lines.length()))
+		{
+			string line = lines[idx].trim_whitespace();
+			if (line == "" || line.starts_with("//") || line.starts_with("#") || line.starts_with(";"))
+			{
+				idx++;
+				continue;
+			}
+
+			string cmd, a;
+			split_command(line, cmd, a);
+			cmd = cmd.lower();
+
+			if (cmd == "if")
+			{
+				depth++;
+				idx++;
+				continue;
+			}
+			if (cmd == "end")
+			{
+				idx++;
+				if (depth == 0) return;
+				depth--;
+				continue;
+			}
+			if (depth == 0)
+			{
+				if (cmd == "else")
+				{
+					idx++; // consume the else line, execute from here
+					return;
+				}
+				if (cmd == "elseif")
+				{
+					idx++; // consume elseif line
+					if (evaluate_condition(apply_variables(a)))
+						return; // execute from here
+					// condition false — keep searching
+					continue;
+				}
+			}
+			idx++;
+		}
+	}
+
+	// Skip all lines to the matching end (used when a true branch has finished).
+	void seek_end(array<string>@ lines, int &inout idx)
+	{
+		int depth = 0;
+		while (idx < int(lines.length()))
+		{
+			string line = lines[idx].trim_whitespace();
+			idx++;
+			if (line == "" || line.starts_with("//") || line.starts_with("#") || line.starts_with(";"))
+				continue;
+			string cmd, a;
+			split_command(line, cmd, a);
+			cmd = cmd.lower();
+			if (cmd == "if") depth++;
+			else if (cmd == "end")
+			{
+				if (depth == 0) return;
+				depth--;
+			}
+		}
+	}
+
+	bool evaluate_condition(string cond)
+	{
+		cond = cond.trim_whitespace();
+		string ctype, cargs;
+		split_command(cond, ctype, cargs);
+		ctype = ctype.lower();
+		cargs = cargs.trim_whitespace();
+
+		if (ctype == "not")
+			return !evaluate_condition(cargs);
+
+		if (ctype == "quest_active")
+		{
+			int qi = quests.find_quest(cargs);
+			return qi >= 0 && !quests.quests[qi].completed;
+		}
+		if (ctype == "quest_complete")
+		{
+			int qi = quests.find_quest(cargs);
+			return qi >= 0 && quests.quests[qi].completed;
+		}
+		if (ctype == "has_quest")
+			return quests.has_quest(cargs);
+		if (ctype == "has_item")
+			return inventory.find_item(cargs) >= 0;
+		if (ctype == "has_flag")
+			return has_flag(cargs);
+		if (ctype == "flag_eq")
+		{
+			string fname, fval;
+			split_command(cargs, fname, fval);
+			return get_flag(fname.trim_whitespace()) == fval.trim_whitespace();
+		}
+		if (ctype == "level")
+			return player.level >= parse_int(cargs);
+		if (ctype == "gold")
+			return player.gold >= parse_int(cargs);
+		if (ctype == "visited")
+		{
+			string mpath, nstr;
+			split_command(cargs, mpath, nstr);
+			int n = nstr != "" ? parse_int(nstr) : 1;
+			return get_map_visits(mpath.trim_whitespace()) >= n;
+		}
+		if (ctype == "interacted")
+		{
+			// interacted map:x:y n  — last token is the count, everything before is the key
+			int last_space = cargs.find_last(" ");
+			if (last_space >= 0)
+			{
+				string ikey = cargs.substr(0, last_space).trim_whitespace();
+				int n = parse_int(cargs.substr(last_space + 1).trim_whitespace());
+				return get_object_interactions(ikey) >= n;
+			}
+			return get_object_interactions(cargs) >= 1;
+		}
+		return false;
+	}
+
+	void run_spawn_item(string args)
+	{
+		// spawn_item minx maxx miny maxy item_id [amount [pickup_text]]
+		array<string>@ tokens = parse_quoted_tokens(args);
+		if (tokens.length() < 5) return;
+		int minx = parse_int(tokens[0]);
+		int maxx = parse_int(tokens[1]);
+		int miny = parse_int(tokens[2]);
+		int maxy = parse_int(tokens[3]);
+		string item_id = tokens[4];
+		int amount = tokens.length() > 5 ? parse_int(tokens[5]) : 1;
+		if (amount < 1) amount = 1;
+		string pickup_text = tokens.length() > 6 ? tokens[6] : "";
+		spawn_map_item(minx, maxx, miny, maxy, item_id, amount, pickup_text);
+	}
+
+	void split_command(string line, string &out command, string &out args)
+	{
+		int pos = line.find(" ");
+		if (pos < 0)
+		{
+			command = line;
+			args = "";
+			return;
+		}
+		command = line.substr(0, pos);
+		args = line.substr(pos + 1).trim_whitespace();
+	}
+
+	string apply_variables(string text)
+	{
+		int start = text.find("<");
+		while (start >= 0)
+		{
+			int ending = text.find(">", start + 1);
+			if (ending < 0)
+				break;
+
+			string name = text.substr(start + 1, ending - start - 1);
+			string value = get_variable(name);
+			text = text.substr(0, start) + value + text.substr(ending + 1);
+			start = text.find("<");
+		}
+		return text;
+	}
+
+	string get_variable(string name)
+	{
+		string value;
+		if (variables.get(name, value))
+			return value;
+		int number = 0;
+		if (variables.get(name, number))
+			return string(number);
+		return "";
+	}
+
+	bool run_text(string message, bool play_story_cue, bool use_speech)
+	{
+		last_text = message;
+		if (play_story_cue && story_sound.active)
+		{
+			story_sound.stop();
+			story_sound.play();
+		}
+		if (use_speech)
+			speak(message, true);
+
+		while (true)
+		{
+			update_runtime();
+			if ((key_down(KEY_LCTRL) || key_down(KEY_RCTRL)) && key_pressed(KEY_S))
+			{
+				skip_lines_remaining = 2;
+				return true;
+			}
+			if (key_pressed(KEY_Z))
+			{
+				clipboard_set_text(message);
+				speak("Copied");
+			}
+			if (key_pressed(KEY_T) || key_pressed(KEY_LEFT) || key_pressed(KEY_RIGHT) || key_pressed(KEY_UP) || key_pressed(KEY_DOWN))
+				speak(message, true);
+			if (key_pressed(KEY_RETURN) || key_pressed(KEY_C) || key_pressed(KEY_SPACE))
+				return true;
+			wait(5);
+		}
+
+		return true;
+	}
+
+	void wait_command(int milliseconds)
+	{
+		timer t;
+		while (t.elapsed < milliseconds)
+		{
+			update_runtime();
+			wait(5);
+		}
+	}
+
+	void run_play(string args, bool wait_for_finish = false)
+	{
+		array<string>@ parts = split_csv(args);
+		if (parts.length() == 0)
+			return;
+
+		string filename = resolve_asset_path(parts[0].trim_whitespace());
+		int volume = 0;
+		int pan = 0;
+		if (parts.length() > 1)
+			volume = parse_int(parts[1].trim_whitespace());
+		if (parts.length() > 2)
+			pan = parse_int(parts[2].trim_whitespace());
+
+		sound@ s = sound();
+		if (@s == null)
+			return;
+		if (!s.load(filename))
+			return;
+		s.volume = volume;
+		s.pan = pan;
+		s.play();
+		if (wait_for_finish)
+		{
+			while (s.playing)
+			{
+				update_runtime();
+				wait(5);
+			}
+		}
+		else
+			active_sounds.insert_last(@s);
+	}
+
+	void stop_play_sounds()
+	{
+		for (uint i = 0; i < active_sounds.length(); i++)
+		{
+			if (@active_sounds[i] != null)
+				active_sounds[i].stop();
+		}
+		active_sounds.resize(0);
+	}
+
+	void start_music(string filename)
+	{
+		music_sound.stop();
+		music_fade.stop();
+		if (!music_sound.load(resolve_asset_path(filename.trim_whitespace())))
+			return;
+		music_sound.volume = music_volume;
+		music_sound.play_looped();
+	}
+
+	void start_ambient(string filename)
+	{
+		ambient_sound.stop();
+		ambient_fade.stop();
+		if (!ambient_sound.load(resolve_asset_path(filename.trim_whitespace())))
+			return;
+		ambient_sound.volume = ambient_volume;
+		ambient_sound.play_looped();
+	}
+
+	void run_write(string args)
+	{
+		string variable_name;
+		string prompt;
+		split_command(args, variable_name, prompt);
+		string value = writer.input(prompt);
+		if (!writer.cancelled)
+			variables.set(variable_name, value);
+	}
+
+	void run_write_required(string args)
+	{
+		string variable_name;
+		string prompt;
+		split_command(args, variable_name, prompt);
+
+		while (true)
+		{
+			string value = writer.input(prompt);
+			if (writer.cancelled || value.trim_whitespace() == "")
+			{
+				speak("A name is required.");
+				continue;
+			}
+			variables.set(variable_name, value);
+			return;
+		}
+	}
+
+	void run_question(string args)
+	{
+		array<string>@ tokens = parse_quoted_tokens(args);
+		if (tokens.length() < 3)
+			return;
+
+		string variable_name = tokens[0];
+		string prompt = apply_variables(tokens[1]);
+		array<string> options;
+		for (uint i = 2; i < tokens.length(); i++)
+			options.insert_last(apply_variables(tokens[i]));
+
+		int selected = ask_question(prompt, options);
+		variables.set(variable_name, selected);
+	}
+
+	void run_give_item(string args)
+	{
+		// give_item "item_id" [amount]
+		array<string>@ tokens = parse_quoted_tokens(args);
+		if (tokens.length() < 1)
+			return;
+		string item_id = tokens[0];
+		int amount = tokens.length() > 1 ? parse_int(tokens[1]) : 1;
+		if (amount < 1) amount = 1;
+		item_definition@ def = find_item_def(item_id);
+		string item_name = @def != null ? def.name : item_id;
+		string item_description = @def != null ? def.description : "";
+		inventory.add_item(item_id, item_name, item_description, amount);
+		mdlg("You received " + (amount > 1 ? string(amount) + "x " : "") + item_name + ".");
+	}
+
+	void run_quest(string args)
+	{
+		array<string>@ tokens = parse_quoted_tokens(args);
+		if (tokens.length() < 4)
+			return;
+
+		string quest_id = tokens[0];
+		string quest_name = apply_variables(tokens[1]);
+		string quest_description = apply_variables(tokens[2]);
+		string quest_requirements = apply_variables(tokens[3]);
+		bool hidden = false;
+		if (tokens.length() > 4)
+		{
+			string hidden_text = tokens[4].lower();
+			hidden = hidden_text == "1" || hidden_text == "true" || hidden_text == "yes" || hidden_text == "on";
+		}
+
+		award_quest(quest_id, quest_name, quest_description, quest_requirements, 0, hidden);
+	}
+
+	bool run_answer_at(string args)
+	{
+		string variable_name;
+		string remainder;
+		split_command(args, variable_name, remainder);
+
+		string answer_number_text;
+		string nested_command;
+		split_command(remainder, answer_number_text, nested_command);
+
+		int chosen = 0;
+		if (!variables.get(variable_name, chosen))
+			return true;
+
+		if (chosen != parse_int(answer_number_text))
+			return true;
+
+		array<string> single_line = { nested_command };
+		int tmp_idx = 0;
+		return execute_at(single_line, tmp_idx);
+	}
+
+	int ask_question(string prompt, array<string>@ options)
+	{
+		if (options.length() == 0)
+			return 0;
+
+		int current = 0;
+		speak(prompt + ". " + options[current], true);
+
+		while (true)
+		{
+			update_runtime();
+			if (question_down.pressing())
+			{
+				current++;
+				if (current >= int(options.length()))
+					current = 0;
+				speak(options[current], true);
+			}
+			if (question_up.pressing())
+			{
+				current--;
+				if (current < 0)
+					current = options.length() - 1;
+				speak(options[current], true);
+			}
+			if (key_pressed(KEY_T) || key_pressed(KEY_TAB))
+				speak(prompt + ". " + options[current], true);
+			if (key_pressed(KEY_RETURN) || key_pressed(KEY_SPACE))
+				return current + 1;
+			wait(5);
+		}
+
+		return 0;
+	}
+
+	array<string>@ parse_quoted_tokens(string text)
+	{
+		array<string> result;
+		string current;
+		bool in_quotes = false;
+
+		for (uint i = 0; i < text.length(); i++)
+		{
+			string ch = text.substr(i, 1);
+			if (ch == "\"")
+			{
+				if (in_quotes)
+				{
+					result.insert_last(current);
+					current = "";
+					in_quotes = false;
+				}
+				else
+				{
+					if (current.trim_whitespace() != "")
+						result.insert_last(current.trim_whitespace());
+					current = "";
+					in_quotes = true;
+				}
+				continue;
+			}
+
+			if (!in_quotes && ch == " ")
+			{
+				if (current != "")
+				{
+					result.insert_last(current);
+					current = "";
+				}
+				continue;
+			}
+
+			current += ch;
+		}
+
+		if (current != "")
+			result.insert_last(current.trim_whitespace());
+		return result;
+	}
+
+	array<string>@ split_csv(string text)
+	{
+		array<string> result;
+		string current;
+		bool in_quotes = false;
+
+		for (uint i = 0; i < text.length(); i++)
+		{
+			string ch = text.substr(i, 1);
+			if (ch == "\"")
+			{
+				in_quotes = !in_quotes;
+				current += ch;
+				continue;
+			}
+			if (!in_quotes && ch == ",")
+			{
+				result.insert_last(trim_quotes(current.trim_whitespace()));
+				current = "";
+				continue;
+			}
+			current += ch;
+		}
+
+		if (current != "")
+			result.insert_last(trim_quotes(current.trim_whitespace()));
+		return result;
+	}
+
+	void update_runtime()
+	{
+		update_music_hotkeys();
+		update_fades();
+		clean_finished_sounds();
+	}
+
+	void update_music_hotkeys()
+	{
+		if (key_pressed(KEY_PAGEUP) && music_volume < music_max_volume)
+		{
+			music_volume += 1;
+			if (music_volume > music_max_volume)
+				music_volume = music_max_volume;
+			music_sound.volume = music_volume;
+		}
+
+		if (key_pressed(KEY_PAGEDOWN) && music_volume > music_min_volume)
+		{
+			music_volume -= 1;
+			if (music_volume < music_min_volume)
+				music_volume = music_min_volume;
+			music_sound.volume = music_volume;
+		}
+	}
+
+	void update_fades()
+	{
+		if (music_fade.active && music_fade.step_timer.elapsed >= music_fade.step_delay)
+		{
+			music_fade.step_timer.restart();
+			if (music_volume < music_fade.target_volume)
+				music_volume++;
+			else if (music_volume > music_fade.target_volume)
+				music_volume--;
+			else
+				music_fade.stop();
+			music_sound.volume = music_volume;
+		}
+
+		if (ambient_fade.active && ambient_fade.step_timer.elapsed >= ambient_fade.step_delay)
+		{
+			ambient_fade.step_timer.restart();
+			if (ambient_volume < ambient_fade.target_volume)
+				ambient_volume++;
+			else if (ambient_volume > ambient_fade.target_volume)
+				ambient_volume--;
+			else
+				ambient_fade.stop();
+			ambient_sound.volume = ambient_volume;
+		}
+	}
+
+	void clean_finished_sounds()
+	{
+		if (active_sounds.length() == 0)
+			return;
+
+		for (int i = int(active_sounds.length()) - 1; i >= 0; i--)
+		{
+			if (@active_sounds[i] == null || !active_sounds[i].playing)
+				active_sounds.remove_at(i);
+		}
+	}
+
+	void stop_all_audio()
+	{
+		stop_play_sounds();
+		story_sound.stop();
+		music_sound.stop();
+		ambient_sound.stop();
+	}
+
+	void pause_world_audio()
+	{
+		pause_object_audio();
+	}
+
+	void resume_world_audio()
+	{
+		resume_object_audio();
+	}
+}

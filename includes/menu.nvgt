@@ -1,0 +1,381 @@
+#include "custom_menu.nvgt"
+
+custom_menu main_menu;
+custom_menu journey_menu;
+
+void fade_pool_quick(sound_pool@ pool, int amount = 8)
+{
+	for (uint i = 0; i < pool.items.length(); i++)
+	{
+		if (@pool.items[i].handle == null)
+			continue;
+		if (!pool.items[i].handle.active)
+			continue;
+		float new_volume = pool.items[i].handle.volume - amount;
+		if (new_volume < -50)
+			new_volume = -50;
+		pool.items[i].handle.set_volume(new_volume);
+	}
+}
+
+void quick_fade_world_audio()
+{
+	for (int i = 0; i < 4; i++)
+	{
+		fade_pool_quick(p);
+		fade_pool_quick(objpool);
+		fade_pool_quick(doorpool);
+		wait(10);
+	}
+	p.pause_all();
+	objpool.pause_all();
+	doorpool.pause_all();
+	pause_all_sources();
+	wt.stop();
+}
+
+void lower_world_audio_for_menu()
+{
+	p.pause_all();
+	objpool.pause_all();
+	doorpool.pause_all();
+	pause_all_sources();
+	wt.stop();
+	if (music.current_music.active)
+		music.current_music.volume = -18;
+}
+
+void resume_world_audio_after_menu()
+{
+	p.resume_all();
+	objpool.resume_all();
+	doorpool.resume_all();
+	resume_all_sources();
+	wt.start();
+	wt.update(gm, me.x, me.y);
+	if (music.current_music.active)
+		music.current_music.volume = music.base_volume;
+}
+
+string format_play_time(int total_seconds)
+{
+	int days = total_seconds / 86400;
+	int hours_total = total_seconds / 3600;
+	int hours = (total_seconds % 86400) / 3600;
+	int minutes = (total_seconds % 3600) / 60;
+	int seconds = total_seconds % 60;
+	string text = "";
+	if (hours_total >= 24)
+		text += string(days) + " days ";
+	text += string(hours_total >= 24 ? hours : hours_total) + " hours ";
+	text += string(minutes) + " minutes ";
+	text += string(seconds) + " seconds";
+	return text;
+}
+
+string location_label_from_map(string map_path)
+{
+	string normalized = map_path.replace("/", "\\", true).lower();
+	if (normalized.find_last("\\") >= 0)
+		normalized = normalized.substr(normalized.find_last("\\") + 1);
+
+	if (normalized == "house.map") return "Your house";
+	if (normalized == "village.map") return "Yuri village";
+	if (normalized == "miller_house.map") return "Miller house";
+	if (normalized == "reed_house.map") return "Reed house";
+	if (normalized == "tanner_house.map") return "Tanner house";
+	if (normalized == "mayor_house.map") return "Mayor Holloway's house";
+	if (normalized == "soul_lab.map") return "Soul lab";
+	if (normalized == "shopping_center.map") return "Shopping center";
+	if (normalized == "shopping_storage.map") return "Shopping center warehouse";
+	if (normalized == "worship_temple.map") return "Worship temple";
+	if (normalized == "orphanage.map") return "Yuri orphanage common room";
+	if (normalized == "orphanage_hall.map") return "Yuri orphanage hall";
+	if (normalized == "orphanage_kitchen.map") return "Yuri orphanage kitchen";
+	if (normalized == "orphanage_quiet_room.map") return "Yuri orphanage quiet room";
+	if (normalized.starts_with("orphan_room")) return "Yuri orphanage room";
+	return map_path;
+}
+
+string get_saved_game_label()
+{
+	if (!file_exists(save_file_path))
+		return "";
+	savedata save(save_file_path);
+	save.load();
+	int play_time = save.read_int("play_time_seconds");
+	string current_map = save.read_string("current_map");
+	return "Load Game. Current play time " + format_play_time(play_time) + ". Current location " + location_label_from_map(current_map);
+}
+
+void setup_main_menu()
+{
+	main_menu.reset();
+	main_menu.intro_text = "Main menu.";
+	main_menu.click_sound = "sounds\\ui\\menumove.ogg";
+	main_menu.close_sound = "sounds\\ui\\menuclose.ogg";
+	main_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+	main_menu.edge_sound = "sounds\\ui\\menuedge.ogg";
+//	main_menu.open_sound = "sounds\\ui\\menuopen.ogg";
+	main_menu.wrap_sound = "sounds\\ui\\menuwrap.ogg";
+	main_menu.add_music("sounds\\MUSIC\\menu.ogg");
+	if (file_exists(save_file_path))
+		main_menu.add_item(get_saved_game_label(), "load");
+	main_menu.add_item("Start Game", "start");
+	main_menu.add_item("Quit", "quit");
+}
+
+void setup_journey_menu()
+{
+	journey_menu.reset();
+	journey_menu.intro_text = "Journey menu.";
+	journey_menu.click_sound = "sounds\\ui\\menumove.ogg";
+	journey_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+	journey_menu.close_sound = "sounds\\ui\\menuenter.ogg";
+	journey_menu.add_item("Status");
+	journey_menu.add_item("Inventory");
+	journey_menu.add_item("Quests");
+	journey_menu.add_item("Save");
+	journey_menu.add_item("Exit");
+}
+
+string run_main_menu()
+{
+	setup_main_menu();
+	int selection = main_menu.run(0, true);
+	if (selection > 0)
+		main_menu.fade_music(1);
+	if (selection < 1)
+		return "quit";
+	return main_menu.get_item_id(selection);
+}
+
+void show_stats_screen()
+{
+	custom_menu stats_menu;
+	stats_menu.intro_text = "Stats.";
+	stats_menu.click_sound = "sounds\\ui\\menumove.ogg";
+	stats_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+	stats_menu.add_item("Name. " + player.name);
+	stats_menu.add_item("Level. " + string(player.level));
+	stats_menu.add_item("Strength. " + string(player.strength));
+	stats_menu.add_item("Defense. " + string(player.defense));
+	stats_menu.add_item("Wisdom. " + string(player.wisdom));
+	stats_menu.add_item("Intelligence. " + string(player.intelligence));
+	stats_menu.add_item("Luck. " + string(player.luck));
+	stats_menu.add_item("Vitality. " + string(player.vitality));
+	stats_menu.add_item("Stamina. " + string(player.stamina));
+	stats_menu.add_item("Speed. " + string(player.speed));
+	stats_menu.add_item("HP. " + string(player.current_hp) + " / " + string(player.hp));
+	stats_menu.add_item("Physical Attack. " + string(player.attack));
+	stats_menu.add_item("Magic Attack. " + string(player.magic_attack));
+	stats_menu.add_item("Mana. " + string(player.current_mana) + " / " + string(player.mana));
+	stats_menu.add_item("Gold. " + string(player.gold));
+	stats_menu.add_item("Back", "back");
+
+	while (true)
+	{
+		int choice = stats_menu.run(0, true);
+		if (choice < 1 || stats_menu.get_item_id(choice) == "back")
+			return;
+		speak(stats_menu.get_item_name(choice), true);
+	}
+}
+
+void show_skills_screen()
+{
+	custom_menu skills_menu;
+	skills_menu.intro_text = "Skills.";
+	skills_menu.click_sound = "sounds\\ui\\menumove.ogg";
+	skills_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+	for (uint i = 0; i < player.skills.length(); i++)
+		skills_menu.add_item(player.skills[i].name + ". Level " + string(player.skills[i].level), string(i), player.skills[i].description);
+	skills_menu.add_item("Back", "back");
+
+	while (true)
+	{
+		int choice = skills_menu.run(0, true);
+		if (choice < 1)
+			return;
+		string item_id = skills_menu.get_item_id(choice);
+		if (item_id == "back")
+			return;
+		int idx = parse_int(item_id);
+		if (idx < 0 || idx >= int(player.skills.length()))
+			continue;
+
+		custom_menu skill_actions;
+		skill_actions.intro_text = player.skills[idx].name + ".";
+		skill_actions.click_sound = "sounds\\ui\\menumove.ogg";
+		skill_actions.enter_sound = "sounds\\ui\\menuenter.ogg";
+		skill_actions.add_item("Use Skill", "use");
+		skill_actions.add_item("Back", "back");
+
+		while (true)
+		{
+			int action = skill_actions.run(0, true);
+			if (action < 1 || skill_actions.get_item_id(action) == "back")
+				break;
+			if (!player.skills[idx].outside_battle_usable)
+				dlg_show("You can't use this outside of battle.");
+			else
+				dlg_show("Nothing happens.");
+		}
+	}
+}
+
+void show_status_menu()
+{
+	custom_menu status_menu;
+	status_menu.intro_text = "Status.";
+	status_menu.click_sound = "sounds\\ui\\menumove.ogg";
+	status_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+	status_menu.add_item("View Stats");
+	status_menu.add_item("Skills");
+	status_menu.add_item("Back");
+
+	while (true)
+	{
+		int choice = status_menu.run(0, true);
+		if (choice == 1)
+			show_stats_screen();
+		else if (choice == 2)
+			show_skills_screen();
+		else
+			return;
+	}
+}
+
+void show_inventory_menu()
+{
+	while (true)
+	{
+		if (inventory.items.length() == 0)
+		{
+			dlg_show("Your inventory is empty.");
+			return;
+		}
+
+		custom_menu inventory_menu;
+		inventory_menu.intro_text = "Inventory.";
+		inventory_menu.click_sound = "sounds\\ui\\menumove.ogg";
+		inventory_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+		for (uint i = 0; i < inventory.items.length(); i++)
+			inventory_menu.add_item(inventory.entry_name(i), inventory.items[i].id, inventory.items[i].description);
+		inventory_menu.add_item("Back", "back");
+
+		int choice = inventory_menu.run(0, true);
+		if (choice < 1 || inventory_menu.get_item_id(choice) == "back")
+			return;
+
+		string item_id = inventory_menu.get_item_id(choice);
+		int item_idx = inventory.find_item(item_id);
+		if (item_idx < 0)
+			continue;
+		string item_name = inventory.items[item_idx].name;
+
+		item_definition@ def = find_item_def(item_id);
+		bool can_use = @def != null && def.usable_outside_battle && (def.hp_restore > 0 || def.mana_restore > 0);
+
+		custom_menu item_actions;
+		item_actions.intro_text = item_name + ".";
+		item_actions.click_sound = "sounds\\ui\\menumove.ogg";
+		item_actions.enter_sound = "sounds\\ui\\menuenter.ogg";
+		if (can_use)
+			item_actions.add_item("Use", "use");
+		item_actions.add_item("Back", "back");
+
+		int action = item_actions.run(0, true);
+		if (action < 1 || item_actions.get_item_id(action) == "back")
+			continue;
+
+		if (item_actions.get_item_id(action) == "use")
+		{
+			string result = use_item(item_id);
+			if (result != "")
+				dlg_show(result);
+			else
+				dlg_show("Nothing happened.");
+		}
+	}
+}
+
+void show_quest_menu()
+{
+	if (quests.quests.length() == 0)
+	{
+		dlg_show("You have no quests.");
+		return;
+	}
+
+	custom_menu quest_menu;
+	quest_menu.intro_text = "Quests.";
+	quest_menu.click_sound = "sounds\\ui\\menumove.ogg";
+	quest_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+	int visible_quests = 0;
+	for (uint i = 0; i < quests.quests.length(); i++)
+	{
+		if (quests.quests[i].hidden)
+			continue;
+		quest_menu.add_item(quests.entry_name(i), quests.quests[i].id, quests.entry_description(i));
+		visible_quests++;
+	}
+	if (visible_quests == 0)
+	{
+		dlg_show("You have no visible quests.");
+		return;
+	}
+	quest_menu.add_item("Back", "back");
+
+	while (true)
+	{
+		int choice = quest_menu.run(0, true);
+		if (choice < 1)
+			return;
+		if (quest_menu.get_item_id(choice) == "back")
+			return;
+	}
+}
+
+void open_journey_menu()
+{
+	lower_world_audio_for_menu();
+	setup_journey_menu();
+
+	while (true)
+	{
+		int choice = journey_menu.run(0, true);
+		if (choice == 1)
+			show_status_menu();
+		else if (choice == 2)
+			show_inventory_menu();
+		else if (choice == 3)
+			show_quest_menu();
+		else if (choice == 4)
+			save_game_state();
+		else if (choice == 5)
+		{
+			custom_menu confirm;
+			confirm.intro_text = "Warning! This will exit to the main menu without saving. Are you sure?";
+			confirm.click_sound = "sounds\\ui\\menumove.ogg";
+			confirm.enter_sound = "sounds\\ui\\menuenter.ogg";
+			confirm.add_item("Yes, exit to main menu");
+			confirm.add_item("Cancel");
+			int answer = confirm.run(0, true);
+			if (answer == 1)
+			{
+				fade_multi_pool(1);
+				music.fade_out_and_stop();
+				pause_all_sources();
+				wt.stop();
+				in_world = false;
+				speak("Returned to main menu.");
+				return;
+			}
+		}
+		else
+			break;
+	}
+
+	resume_world_audio_after_menu();
+}

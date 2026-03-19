@@ -1,0 +1,331 @@
+#include "dlg_seens.nvgt"
+
+game_object@[] objects(0);
+
+void pause_object_audio()
+{
+	p.pause_all();
+	objpool.pause_all();
+	doorpool.pause_all();
+	pause_all_sources();
+	wt.stop();
+}
+
+void resume_object_audio()
+{
+	p.resume_all();
+	objpool.resume_all();
+	doorpool.resume_all();
+	resume_all_sources();
+	wt.start();
+	wt.update(gm, me.x, me.y);
+}
+
+class game_object : collider
+{
+	string objsound;
+	string bumpsound;
+	int sound_slot = -1;
+	int sx;
+	int sy;
+
+	game_object(int min_x, int max_x, int min_y, int max_y, string text = "", string sound_file = "", string bump_sound_file = "sounds\\misk\\bump.ogg")
+	{
+		super(min_x, max_x, min_y, max_y, text, bump_sound_file);
+		objsound = sound_file;
+		bumpsound = bump_sound_file;
+		sx = (min_x + max_x) / 2;
+		sy = (min_y + max_y) / 2;
+		if (objsound != "")
+		{
+			sound_slot = objpool.play_2d(objsound, me.x, me.y, sx, sy, true);
+			if (sound_slot >= 0)
+				objpool.update_sound_range_2d(sound_slot, sx - min_x, max_x - sx, sy - min_y, max_y - sy);
+		}
+	}
+
+	void interact()
+	{
+		string ikey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		record_object_interaction(ikey);
+		pause_object_audio();
+		if (interact_text != "")
+			mdlg(interact_text.replace("|", "\r\n", true));
+		resume_object_audio();
+	}
+}
+
+class map_item : game_object
+{
+	string item_id;
+	string item_name;
+	int item_amount;
+	string custom_pickup_text;
+	bool collected;
+
+	map_item(int minx, int maxx, int miny, int maxy, string id, int amount, string pickup_text = "")
+	{
+		item_definition@ def = find_item_def(id);
+		string name = @def != null ? def.name : id;
+		string description = @def != null ? def.description : "";
+		super(minx, maxx, miny, maxy, description, "sounds\\misk\\item.ogg");
+		item_id = id;
+		item_name = name;
+		item_amount = amount;
+		custom_pickup_text = pickup_text;
+		collected = false;
+
+		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		if (is_item_collected(ckey))
+		{
+			collected = true;
+			if (sound_slot >= 0)
+			{
+				objpool.destroy_sound(sound_slot);
+				sound_slot = -1;
+			}
+		}
+	}
+
+	bool contains(int x, int y)
+	{
+		if (collected)
+			return false;
+		return x >= minx && x <= maxx && y >= miny && y <= maxy;
+	}
+
+	void interact()
+	{
+		if (collected)
+			return;
+		collected = true;
+		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		mark_item_collected(ckey);
+		if (sound_slot >= 0)
+		{
+			objpool.destroy_sound(sound_slot);
+			sound_slot = -1;
+		}
+
+		if (item_id == "gold")
+		{
+			gain_gold(item_amount, true);
+			if (custom_pickup_text != "")
+				mdlg(custom_pickup_text);
+			mdlg(player_name + " found " + string(item_amount) + " gold.");
+			return;
+		}
+
+		int slot = p.play_stationary("sounds\\misk\\itemget.ogg", false);
+		while (p.sound_is_active(slot))
+			wait(5);
+		item_definition@ def = find_item_def(item_id);
+		string description = @def != null ? def.description : "";
+		inventory.add_item(item_id, item_name, description, item_amount);
+		if (custom_pickup_text != "")
+			mdlg(custom_pickup_text);
+		string standard_msg = item_amount == 1
+			? player_name + " found a " + item_name + "."
+			: player_name + " found " + string(item_amount) + " " + item_name + ".";
+		mdlg(standard_msg);
+	}
+}
+
+void spawn_map_item(int minx, int maxx, int miny, int maxy, string id, int amount = 1, string pickup_text = "")
+{
+	map_item@ item = map_item(minx, maxx, miny, maxy, id, amount, pickup_text);
+	int idx = add_collider(item);
+	if (idx >= int(objects.length()))
+		objects.resize(idx + 1);
+	@objects[idx] = item;
+}
+
+void spawn_object(int minx, int maxx, int miny, int maxy, string interact_text, string objsound, string bumpsound = "sounds\\misk\\bump.ogg")
+{
+	game_object@ o = game_object(minx, maxx, miny, maxy, interact_text, objsound, bumpsound);
+	int idx = add_collider(o);
+	if (idx >= int(objects.length()))
+		objects.resize(idx + 1);
+	@objects[idx] = o;
+}
+
+class map_rat : game_object
+{
+	string quest_id;
+	bool killed;
+
+	map_rat(int minx, int maxx, int miny, int maxy, string qid)
+	{
+		super(minx, maxx, miny, maxy, "", "sounds\\misk\\rat.ogg");
+		quest_id = qid;
+		killed = false;
+
+		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		if (is_item_collected(ckey))
+		{
+			killed = true;
+			if (sound_slot >= 0)
+			{
+				objpool.destroy_sound(sound_slot);
+				sound_slot = -1;
+			}
+		}
+	}
+
+	bool contains(int x, int y)
+	{
+		if (killed) return false;
+		return x >= minx && x <= maxx && y >= miny && y <= maxy;
+	}
+
+	void interact()
+	{
+		if (killed) return;
+		killed = true;
+		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		mark_item_collected(ckey);
+		if (sound_slot >= 0)
+		{
+			objpool.destroy_sound(sound_slot);
+			sound_slot = -1;
+		}
+		pause_object_audio();
+		int slot = p.play_stationary("sounds\\misk\\rat_die.ogg", false);
+		while (p.sound_is_active(slot))
+			wait(5);
+		mdlg("You killed the rat.");
+		if (quest_id != "")
+		{
+			int qi = quests.find_quest(quest_id);
+			if (qi >= 0 && !quests.quests[qi].completed)
+			{
+				int new_progress = quests.quests[qi].percent_completed + 10;
+				quests.set_progress(quest_id, new_progress);
+				if (new_progress >= 100)
+					mdlg("That is the last of them. The storeroom is clear.");
+			}
+		}
+		resume_object_audio();
+	}
+}
+
+void spawn_rat(int minx, int maxx, int miny, int maxy, string quest_id)
+{
+	map_rat@ r = map_rat(minx, maxx, miny, maxy, quest_id);
+	int idx = add_collider(r);
+	if (idx >= int(objects.length()))
+		objects.resize(idx + 1);
+	@objects[idx] = r;
+}
+
+class scene_npc : game_object
+{
+	string scene_file;
+
+	scene_npc(int minx, int maxx, int miny, int maxy, string snd, string scene_path)
+	{
+		super(minx, maxx, miny, maxy, "", snd);
+		scene_file = scene_path;
+	}
+
+	void interact()
+	{
+		string ikey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		record_object_interaction(ikey);
+		scene.play(scene_file);
+	}
+}
+
+void spawn_scene_npc(int minx, int maxx, int miny, int maxy, string snd, string scene_path)
+{
+	scene_npc@ n = scene_npc(minx, maxx, miny, maxy, snd, scene_path);
+	int idx = add_collider(n);
+	if (idx >= int(objects.length()))
+		objects.resize(idx + 1);
+	@objects[idx] = n;
+}
+
+class map_trigger
+{
+	int minx, maxx, miny, maxy;
+	string scene_file;
+	bool once;
+	bool player_was_in;
+	string flag_key;
+
+	map_trigger(int _minx, int _maxx, int _miny, int _maxy, string scene, bool _once)
+	{
+		minx = _minx; maxx = _maxx; miny = _miny; maxy = _maxy;
+		scene_file = scene;
+		once = _once;
+		player_was_in = false;
+		flag_key = "trigger_" + current_map_path + ":" + string(minx) + ":" + string(miny);
+	}
+
+	void check(int px, int py)
+	{
+		bool in_area = px >= minx && px <= maxx && py >= miny && py <= maxy;
+		if (in_area && !player_was_in)
+		{
+			player_was_in = true;
+			if (once && has_flag(flag_key))
+				return;
+			if (once)
+				set_flag(flag_key);
+			scene.play(scene_file);
+		}
+		else if (!in_area)
+		{
+			player_was_in = false;
+		}
+	}
+}
+
+map_trigger@[] triggers(0);
+
+void check_triggers(int px, int py)
+{
+	for (uint i = 0; i < triggers.length(); i++)
+		triggers[i].check(px, py);
+}
+
+void destroy_all_triggers()
+{
+	triggers.resize(0);
+}
+
+void spawn_trigger(int minx, int maxx, int miny, int maxy, string scene_path, bool once = true)
+{
+	triggers.insert_last(map_trigger(minx, maxx, miny, maxy, scene_path, once));
+}
+
+void destroy_all_objects()
+{
+	objpool.destroy_all();
+	objects.resize(0);
+	destroy_all_triggers();
+}
+
+bool interact_last_collider(int x, int y)
+{
+	if (!can_interact(last_collider_index, x, y))
+		return false;
+	game_object@ o = null;
+	if (last_collider_index >= 0 && last_collider_index < int(objects.length()))
+		@o = @objects[last_collider_index];
+	if (@o != null)
+	{
+		o.interact();
+	}
+	else
+	{
+		collider@ c = @colliders[last_collider_index];
+		if (c.interact_text != "")
+		{
+			pause_object_audio();
+			mdlg(c.interact_text.replace("|", "\r\n", true));
+			resume_object_audio();
+		}
+	}
+	return true;
+}

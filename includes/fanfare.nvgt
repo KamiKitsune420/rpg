@@ -1,0 +1,50 @@
+class fanfare_system
+{
+	void play(string sound_path, music_system@ music_ref)
+	{
+		sound cue;
+		int old_volume = 0;
+		bool resume_music = false;
+
+		if (@music_ref != null && music_ref.current_music.active)
+		{
+			old_volume = int(music_ref.current_music.volume);
+			while (music_ref.current_music.playing && music_ref.current_music.volume > -24)
+			{
+				music_ref.current_music.volume -= 2;
+				wait(10);
+			}
+			if (music_ref.current_music.playing)
+			{
+				music_ref.current_music.pause();
+				resume_music = true;
+			}
+		}
+
+		if (!cue.load(sound_path))
+		{
+			if (resume_music)
+			{
+				music_ref.current_music.play_looped();
+				music_ref.current_music.volume = old_volume;
+			}
+			return;
+		}
+
+		cue.play();
+		while (cue.playing)
+			wait(5);
+
+		if (resume_music)
+		{
+			music_ref.current_music.play_looped();
+			music_ref.current_music.volume = -24;
+			while (music_ref.current_music.volume < old_volume)
+			{
+				music_ref.current_music.volume += 2;
+				wait(10);
+			}
+			music_ref.current_music.volume = old_volume;
+		}
+	}
+}

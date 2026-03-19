@@ -1,0 +1,68 @@
+class inventory_item
+{
+	string id;
+	string name;
+	string description;
+	int quantity;
+
+	inventory_item()
+	{
+		id = "";
+		name = "";
+		description = "";
+		quantity = 0;
+	}
+
+	inventory_item(string item_id, string item_name, string item_description, int item_quantity = 1)
+	{
+		id = item_id;
+		name = item_name;
+		description = item_description;
+		quantity = item_quantity;
+	}
+}
+
+class inventory_system
+{
+	inventory_item[] items;
+
+	void clear()
+	{
+		items.resize(0);
+	}
+
+	int find_item(string item_id)
+	{
+		for (uint i = 0; i < items.length(); i++)
+		{
+			if (items[i].id == item_id)
+				return int(i);
+		}
+		return -1;
+	}
+
+	void add_item(string item_id, string item_name, string item_description, int item_quantity = 1)
+	{
+		int idx = find_item(item_id);
+		if (idx >= 0)
+		{
+			items[idx].quantity += item_quantity;
+			return;
+		}
+		items.insert_last(inventory_item(item_id, item_name, item_description, item_quantity));
+	}
+
+	string entry_name(int idx)
+	{
+		if (idx < 0 || idx >= int(items.length()))
+			return "";
+		return items[idx].name + ". " + items[idx].quantity;
+	}
+
+	string entry_description(int idx)
+	{
+		if (idx < 0 || idx >= int(items.length()))
+			return "";
+		return items[idx].name + ". Quantity " + items[idx].quantity + ". " + items[idx].description;
+	}
+}

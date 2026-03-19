@@ -1,0 +1,16 @@
+music:village1.ogg
+zone:0:24:0:24:Tanner house
+platform:0:24:0:24:hardwood:Tanner house
+wall:0:24:24:24:wood:house
+wall:0:0:0:24:wood:house
+wall:24:24:0:24:wood:house
+wall:0:24:0:0:wood:house
+wall:5:10:16:16:wood:alcove
+wall:15:20:9:9:wood:alcove
+object:3:5:19:21:"Sit down if you're dizzy. If you're not dizzy, sit anyway. People think better once they've been handed soup.":objects\npc.ogg
+object:14:16:18:20:"I've put the mint somewhere safe again, which would be wonderful if I remembered where safe was.":objects\npc.ogg
+object:19:21:11:13:"You can tell me what happened, or you can tell me what people say happened. Those are rarely the same story.":objects\npc.ogg
+object:4:8:7:9:A broad table is covered in crushed herbs, corked bottles, and handwritten remedy notes.:objects\table.ogg
+object:16:20:5:7:A hanging rack of dried plants rustles softly overhead.:objects\paper.ogg
+object:2:4:13:16:A tidy guest bed with a knitted blanket.:objects\bed.ogg
+door:12:12:0:0:data\maps\village.map:162:81:You step back outside beside the Tanner home.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false

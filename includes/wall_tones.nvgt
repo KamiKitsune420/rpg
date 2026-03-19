@@ -1,0 +1,115 @@
+class wall_tones
+{
+    sound wall_left;
+    sound wall_right;
+    sound wall_up;
+    sound wall_down;
+    bool enabled = false;
+    int max_distance = 4;
+    float max_volume = 0.0;
+    float min_volume = -24.0;
+    string left_file = "sounds/sonar/wall_west.ogg";
+    string right_file = "sounds/sonar/wall_east.ogg";
+    string up_file = "sounds/sonar/wall_north.ogg";
+    string down_file = "sounds/sonar/wall_south.ogg";
+
+    wall_tones(int max_dist = 4)
+    {
+        max_distance = max_dist;
+    }
+
+    void set_files(string left_path, string right_path, string up_path, string down_path)
+    {
+        left_file = left_path;
+        right_file = right_path;
+        up_file = up_path;
+        down_file = down_path;
+    }
+
+    void set_volume_range(float min_vol, float max_vol = 0.0)
+    {
+        min_volume = min_vol;
+        max_volume = max_vol;
+    }
+
+    void start()
+    {
+        enabled = true;
+        if (!wall_left.active) wall_left.load(left_file);
+        if (!wall_right.active) wall_right.load(right_file);
+        if (!wall_up.active) wall_up.load(up_file);
+        if (!wall_down.active) wall_down.load(down_file);
+    }
+
+    void stop()
+    {
+        enabled = false;
+        if (wall_left.playing) wall_left.stop();
+        if (wall_right.playing) wall_right.stop();
+        if (wall_up.playing) wall_up.stop();
+        if (wall_down.playing) wall_down.stop();
+    }
+
+    void update(game_map@ map, int x, int y)
+    {
+        if (!enabled || @map == null)
+            return;
+
+        update_dir(wall_left, map, x, y, -1, 0, left_file, -1.0);
+        update_dir(wall_right, map, x, y, 1, 0, right_file, 1.0);
+        update_dir(wall_up, map, x, y, 0, 1, up_file, 0.0);
+        update_dir(wall_down, map, x, y, 0, -1, down_file, 0.0);
+    }
+
+    int find_wall_distance(game_map@ map, int x, int y, int dx, int dy)
+    {
+        for (int i = 1; i <= max_distance; i++)
+        {
+            if (map.is_wall(x + (dx * i), y + (dy * i)))
+                return i;
+        }
+        return -1;
+    }
+
+    void update_dir(sound@ s, game_map@ map, int x, int y, int dx, int dy, string file, float pan)
+    {
+        int dist = find_wall_distance(map, x, y, dx, dy);
+        if (dist > -1 && dist < max_distance)
+        {
+            float t = float(max_distance - dist) / float(max_distance - 1);
+            float curve = t * t;
+            float vol = min_volume + ((max_volume - min_volume) * curve);
+
+            for (int i = 1; i <= dist; i++)
+            {
+                if (door_at(x + dx * i, y + dy * i))
+                {
+                    vol -= 14.0;
+                    break;
+                }
+            }
+
+            if (!s.playing)
+            {
+                if (!s.active)
+                    s.load(file);
+                if (s.active)
+                {
+                    s.set_pan(pan);
+                    s.set_volume(vol);
+                    s.play_looped();
+                }
+            }
+            else
+            {
+                s.set_pan(pan);
+                s.set_volume(vol);
+            }
+        }
+        else
+        {
+            if (s.playing)
+                s.stop();
+        }
+    }
+}

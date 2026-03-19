@@ -1,0 +1,127 @@
+class loot_entry
+{
+	string item_id;
+	int chance; // 1-100
+	int min_qty;
+	int max_qty;
+
+	loot_entry()
+	{
+		item_id = "";
+		chance = 0;
+		min_qty = 1;
+		max_qty = 1;
+	}
+
+	loot_entry(string id, int pct, int mn = 1, int mx = 1)
+	{
+		item_id = id;
+		chance = pct;
+		min_qty = mn;
+		max_qty = mx;
+	}
+}
+
+class enemy_definition
+{
+	string id;
+	string name;
+	string description;
+	int base_hp;
+	int base_attack;
+	int base_defense;
+	int base_exp;
+	int base_gold_min;
+	int base_gold_max;
+	string movement_sound;
+	string noise_sound;
+	string die_sound;
+	string pain_sound;
+	string attack_name;
+	string attack_sound;
+	loot_entry[] loot;
+
+	enemy_definition()
+	{
+		id = "";
+		name = "";
+		description = "";
+		base_hp = 10;
+		base_attack = 3;
+		base_defense = 1;
+		base_exp = 10;
+		base_gold_min = 1;
+		base_gold_max = 5;
+		movement_sound = "";
+		noise_sound = "";
+		die_sound = "";
+		pain_sound = "";
+		attack_name = "Attack";
+		attack_sound = "";
+	}
+
+	int get_hp(int level)      { return base_hp + (level - 1) * 5; }
+	int get_attack(int level)  { return base_attack + (level - 1) * 2; }
+	int get_defense(int level) { return base_defense + (level - 1); }
+	int get_exp(int level)     { return base_exp + (level - 1) * 8; }
+
+	int get_gold(int level)
+	{
+		int top = base_gold_max + level * 2;
+		return base_gold_min + int(random(0, top - base_gold_min));
+	}
+}
+
+enemy_definition@[] enemy_registry;
+
+void register_enemies()
+{
+	enemy_registry.resize(0);
+
+	enemy_definition@ rat = enemy_definition();
+	rat.id = "rat";
+	rat.name = "Rat";
+	rat.description = "A large grey rat. Its teeth look like small chisels and it has absolutely no sense of personal space.";
+	rat.base_hp = 18;
+	rat.base_attack = 4;
+	rat.base_defense = 1;
+	rat.base_exp = 12;
+	rat.base_gold_min = 2;
+	rat.base_gold_max = 6;
+	rat.movement_sound = "sounds\\enamies\\rats\\rat_movement.ogg";
+	rat.noise_sound    = "sounds\\enamies\\rats\\ratnoise1.ogg";
+	rat.die_sound      = "sounds\\enamies\\rats\\ratdie.ogg";
+	rat.pain_sound     = "sounds\\enamies\\rats\\ratpain.ogg";
+	rat.attack_name    = "Bite";
+	rat.attack_sound   = "sounds\\enamy_attacks\\smallbight.ogg";
+	rat.loot.insert_last(loot_entry("bread", 30));
+	rat.loot.insert_last(loot_entry("healing_herb", 20));
+	enemy_registry.insert_last(rat);
+
+	enemy_definition@ ghost = enemy_definition();
+	ghost.id = "ghost";
+	ghost.name = "Ghost";
+	ghost.description = "A pale figure that moves without quite touching the floor. It notices you noticing it. That does not seem to slow it down.";
+	ghost.base_hp = 28;
+	ghost.base_attack = 7;
+	ghost.base_defense = 3;
+	ghost.base_exp = 20;
+	ghost.base_gold_min = 5;
+	ghost.base_gold_max = 15;
+	ghost.movement_sound = "sounds\\enamies\\ghosts\\ghostnoise.ogg";
+	ghost.noise_sound    = "sounds\\enamies\\ghosts\\ghostnoise.ogg";
+	ghost.die_sound      = "sounds\\enamies\\ghosts\\ghostdie.ogg";
+	ghost.pain_sound     = "sounds\\enamies\\ghosts\\ghostdie.ogg";
+	ghost.attack_name    = "Cold Touch";
+	ghost.attack_sound   = "sounds\\enamy_attacks\\smallbight.ogg";
+	ghost.loot.insert_last(loot_entry("mana_potion", 25));
+	enemy_registry.insert_last(ghost);
+}
+
+enemy_definition@ find_enemy_def(string id)
+{
+	for (uint i = 0; i < enemy_registry.length(); i++)
+		if (enemy_registry[i].id == id)
+			return @enemy_registry[i];
+	return null;
+}

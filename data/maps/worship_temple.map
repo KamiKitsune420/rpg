@@ -1,0 +1,19 @@
+music:village1.ogg
+zone:0:28:0:26:Worship temple
+platform:0:28:0:26:marble:Worship temple
+platform:11:17:0:26:carpet:Central aisle:1
+platform:11:17:18:24:carpet:Sanctum approach:1
+wall:0:28:26:26:wood:temple
+wall:0:0:0:26:wood:temple
+wall:28:28:0:26:wood:temple
+wall:0:13:0:0:wood:temple
+wall:15:28:0:0:wood:temple
+wall:6:10:18:18:wood:altar_rail
+wall:18:22:18:18:wood:altar_rail
+object:12:16:21:23:A stone altar worn smooth by years of hands, ash, and prayer.:objects\rock1.ogg:misk\bump_stone.ogg
+object:5:9:12:14:A long wooden bench polished by worshippers shifting through old hymns.:objects\bench.ogg
+object:19:23:12:14:A matching bench on the opposite side of the aisle.:objects\bench.ogg
+object:4:6:20:22:A brass bell rope hangs here, rough with use.:objects\table.ogg
+object:21:23:20:22:"The gods keep the world upright, child, but lately they sound tired even to me. Leave an offering if you have one.":objects\npc.ogg
+object:8:10:6:8:A basin of cold water rests by the door for washing dust from hands and face.:objects\table.ogg
+door:14:14:0:0:data\maps\village.map:14:99:You step back out into the village, carrying the temple's echo with you.:misk\stonedoor.ogg:misk\stonedoor_activate.ogg:true:false

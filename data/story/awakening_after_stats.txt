@@ -1,0 +1,44 @@
+text Mm.
+text A pause. Long enough that you begin to wonder if she has gone somewhere.
+text Then, like sunlight finding a gap in a curtain:
+text Not bad. Not bad at all. You have opinions about your own bones. I respect that enormously in a person.
+text Although, she adds, cheerful as a bell, one of the skills came through badly. It crossed the distance between us and arrived wrong. Torn at the edges. Teeth showing.
+text I could fix it.
+wait 700
+text I will not fix it.
+text She says this with the frank, pleasant certainty of someone who has made a decision they feel completely comfortable with.
+text I want to see what a broken thing does inside a living body. What it becomes. What you do with it. Is that cruel?
+text She considers this for a genuine moment.
+text Yes. A little. I am occasionally cruel the way weather is occasionally cruel. Not personal. Just what I am.
+text You will keep it. Think of it as a gift with personality.
+text Now listen carefully, <player_name>, because once you wake the world will do its very best to make all of this sound like a dream you had.
+text This land is old. Old in the way that means it remembers things that should have been allowed to forget themselves. Powers that have been running for so long they have worn grooves into what is real. Some are still worshipped. Some are only obeyed. Some are feared in private, in the dark, in the specific silence that follows certain names.
+text They hold the world in its proper shape. 
+text Keep the seasons in order. Keep the dead from rising faster than anyone is prepared for. 
+text Lace meaning into the sun and the tides and the patience of stone.
+text But none of them hold perfectly forever.
+text Her voice goes quieter here. Not sad, exactly. But attentive in the way of someone watching something they have been watching for a very long time.
+text Laws wear thin. Old vows develop holes. Holy things crack, and through those cracks come hunger, and whispers, and clever little disasters that start small.
+text The village above you is called Yuri. Small enough that heaven tends to overlook it, which makes it ideal for the sort of trouble that needs somewhere quiet to root.
+text The gate is locked, she adds, and her voice brightens again instantly, the way a match catches. Something has been happening near the divine, they say. Strange events. They are not wrong, but they are looking in entirely the wrong direction and finding all the wrong answers, which is very human and also somewhat charming.
+text Go there. Listen. Learn the shape of people before they begin to come apart.
+text And when the daylight starts to feel wrong. When the ordinary begins to sound like it is being read from a script. When something underneath the world breathes where nothing should be breathing.
+text Listen for me.
+text I will be there, <player_name>. I am always there. Like a second pulse just under your own. Like something warm pressed against the inside of your ribs.
+text You will not always be able to hear me clearly. The old agreements that keep me out also muffle me. But I will be there.
+text She is close now. The warmth of her is too much and exactly right at the same time.
+text I did not pull you out of the between-space and write you a new body and bend laws that have not bent in an age just to lose you to the first thing with teeth, she says. Very quietly. Very plainly.
+text You are my reach in the world. My hands. My eyes in places I cannot go.
+text And you are, she says, softer still:
+text mine.
+text Oh. Also.
+text She says it the way someone says it when they have been holding onto it and decided now is fine.
+text I may have left one or two things in your house. A small gesture. A starter gift. Something to take the edge off the whole waking-up-in-a-new-body situation.
+wait 500
+text A pause.
+text Possibly also some gold.
+wait 400
+text She does not sound remotely sorry about this.
+text Wake now, <player_name>.
+text Carry me into the world.
+end

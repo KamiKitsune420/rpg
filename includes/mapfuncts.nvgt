@@ -1,0 +1,46 @@
+void check_zone()
+{
+	string zone_name = gm.zone_at(me.x, me.y, me.z);
+	if (zone_name == current_zone)
+		return;
+	current_zone = zone_name;
+	if (zone_name != "")
+		speak(zone_name);
+}
+
+void update_audio_listener()
+{
+	p.update_listener_2d(me.x, me.y);
+	objpool.update_listener_2d(me.x, me.y);
+	doorpool.update_listener_2d(me.x, me.y);
+	wt.update(gm, me.x, me.y);
+}
+
+void playstep(int x, int y, bool bumped = false)
+{
+	string tile = gm.opIndex(x, y, me.z);
+	if (tile == "")
+		return;
+
+	if (bumped)
+	{
+		string hit_file = "sounds\\steps\\wall\\" + tile + ".ogg";
+		if (!file_exists(hit_file))
+			hit_file = "sounds\\steps\\wall\\wallbuilding.ogg";
+		if (file_exists(hit_file))
+			p.play_stationary(hit_file, false);
+	}
+	else
+	{
+		array<string> candidates;
+		for (int i = 1; i <= 10; i++)
+		{
+			string path = "sounds\\steps\\" + tile + "\\" + tile + "step" + i + ".ogg";
+			if (file_exists(path))
+				candidates.insert_last(path);
+		}
+		if (candidates.length() > 0)
+			p.play_stationary(candidates[int(random(0, candidates.length() - 1))], false);
+	}
+}
+

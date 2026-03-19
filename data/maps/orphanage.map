@@ -1,0 +1,23 @@
+music:village1.ogg
+zone:0:40:0:40:Yuri orphanage common room
+platform:0:40:0:40:carpet:Yuri orphanage common room
+wall:0:40:40:40:wood:common_room
+wall:0:0:0:40:wood:common_room
+wall:40:40:0:40:wood:common_room
+wall:0:40:0:0:wood:common_room
+wall:0:1:40:40:wood:common_room
+wall:3:19:40:40:wood:common_room
+wall:21:37:40:40:wood:common_room
+wall:39:40:40:40:wood:common_room
+object:25:27:25:27:A television murmurs softly to itself, showing a program no one in the room is really watching.:objects\tv.ogg
+object:10:15:10:12:A wide sofa sags in the middle from years of children piling onto it at once.:objects\sofa.ogg
+object:6:8:28:30:"Matron Elira says if you're going to help around here, start by using your eyes. The children leave needs lying in plain sight.":objects\npc.ogg
+object:17:19:20:22:"If you're not busy, the little ones keep asking when supper is. They ask every ten minutes, but they mean it every time.":objects\npc.ogg
+object:31:33:14:16:"Toma says the quiet room isn't haunted. Toma says that because he wants everyone else to stop daring him to go in.":objects\npc.ogg
+object:22:24:8:10:"If someone ever fixes the emergency exit in the hall, maybe Matron will stop muttering at it under her breath.":objects\npc.ogg
+object:4:8:8:10:A toy chest sits open, half full of carved animals, threadbare dolls, and a wooden soldier missing one arm.:objects\table.ogg
+object:30:35:32:34:A long low shelf holds board games, chipped cups, and folded blankets for nights when everyone wants to stay in one room.:objects\bookshelf.ogg
+door:40:40:20:20:data\maps\village.map:35:20:You step back outside the orphanage door.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:2:2:40:40:data\maps\orphanage_hall.map:10:1:You step from the common room into the orphanage hall.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:20:20:40:40:data\maps\orphanage_kitchen.map:10:1:Warm air and the smell of broth roll out from the kitchen.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+door:38:38:40:40:data\maps\orphanage_quiet_room.map:12:1:You step into the quiet room, where even the floorboards seem to behave themselves.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false

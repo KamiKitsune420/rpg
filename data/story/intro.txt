@@ -1,0 +1,26 @@
+text You come back into yourself the wrong way. Too fast. Too hard. Like something reaching up from underneath and pulling the rest of you down before you were ready.
+text For a moment you are nowhere with a name.
+text Then: ceiling. Boards. The specific gray of your windows before morning has decided what to do with itself.
+text Something was there. Is still there, almost. At the edges.
+text A voice. Too warm. Too pleased with itself. Landing on your name like it had been carrying it a long way and was relieved to finally set it down.
+saytext Your name is <player_name>.
+text For just a moment you are not entirely certain you thought that alone.
+text The room does not agree. Your room. Your walls, your dust, your shutters, the ordinary comfortable weight of everything exactly where you left it. Unbothered. Aggressively, cheerfully normal.
+text The room makes its case. Yours. The bed, the table, the shelf with the clay figures your hands remember making even when the rest of you is slower to arrive.
+text And yet.
+text You do not remember this.
+wait 400
+text The memories arrive the way a wall arrives when you are not watching: all at once, with no warning and no apology.
+text Not yours. Except in every way that matters. You know this feeling the way you know a word you cannot place the origin of.
+text Something that was left behind. Or borrowed. Or both.
+wait 600
+text Then it is gone.
+text You are still here. The blankets are still too warm. The ceiling is still doing its job.
+text You decide that this is fine.
+text Maybe it was her.
+text You have survived worse. Possibly. You are not certain how you know that, but you do.
+text Something in your chest is not convinced.
+text You sit up. The feeling does not go with you.
+text The dream is already dissolving at the edges, the way dreams do when they are no longer needed.
+text Your house is around you, quiet and waiting. You could take a moment first.
+text But the village is outside, and it sounds like it has been waiting long enough already.

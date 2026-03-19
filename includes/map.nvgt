@@ -1,0 +1,349 @@
+class game_map
+{
+	coordinate_map m;
+	int maxx;
+	int maxy;
+	string music_path;
+
+	game_map()
+	{
+		maxx = 0;
+		maxy = 0;
+		music_path = "";
+	}
+
+	void reset()
+	{
+		m.reset();
+		maxx = 0;
+		maxy = 0;
+		music_path = "";
+		destroy_all_sources();
+		destroy_all_travelpoints();
+		destroy_all_objects();
+		destroy_all_battle_zones();
+		clear_colliders();
+	}
+
+	bool load_map(string filename)
+	{
+		reset();
+
+		file f;
+		if (!f.open(filename, "r"))
+			return false;
+
+		while (!f.eof)
+		{
+			string line = f.read_line().trim_whitespace();
+			if (should_skip_line(line))
+				continue;
+			parse_line(line);
+		}
+
+		f.close();
+		return true;
+	}
+
+	bool should_skip_line(const string&in line)
+	{
+		if (line == "") return true;
+		if (line.starts_with("//")) return true;
+		if (line.starts_with("#")) return true;
+		if (line.starts_with(";")) return true;
+		return false;
+	}
+
+	// Map format (no z coordinates):
+	//   music:filename
+	//   zone:minx:maxx:miny:maxy:name
+	//   platform:minx:maxx:miny:maxy:tile[:zone]
+	//   wall:minx:maxx:miny:maxy:type[:zone]
+	//   door:minx:maxx:miny:maxy:destmap:dx:dy:text:loopsound:opensound:auto[:locked[:lockedtext]]
+	//   object:minx:maxx:miny:maxy:text[:sound[:bump]]
+	//   source:minx:maxx:miny:maxy:sound
+	//   collider:minx:maxx:miny:maxy:text
+	void parse_line(const string&in line)
+	{
+		int first_colon = line.find(":");
+		if (first_colon < 0)
+			return;
+
+		string kind = line.substr(0, first_colon).trim_whitespace().lower();
+		if (kind == "music")
+		{
+			set_music(line.substr(first_colon + 1).trim_whitespace());
+			return;
+		}
+
+		array<string>@ parts = line.split(":");
+		if (parts.length() < 6)
+			return;
+
+		int minx = parse_int(parts[1].trim_whitespace());
+		int maxx = parse_int(parts[2].trim_whitespace());
+		int miny = parse_int(parts[3].trim_whitespace());
+		int maxy = parse_int(parts[4].trim_whitespace());
+		string name = parts[5].trim_whitespace();
+		string extra = parts.length() > 6 ? parts[6].trim_whitespace() : "";
+
+		if (kind == "zone")
+		{
+			zone(minx, maxx, miny, maxy, name);
+			update_bounds(maxx, maxy);
+			return;
+		}
+
+		if (kind == "platform")
+		{
+			int prio = parts.length() > 7 ? parse_int(parts[7].trim_whitespace()) : 0;
+			platform(minx, maxx, miny, maxy, name, extra, prio);
+			update_bounds(maxx, maxy);
+			return;
+		}
+
+		if (kind == "wall")
+		{
+			wall(minx, maxx, miny, maxy, name, extra);
+			update_bounds(maxx, maxy);
+			return;
+		}
+
+		if (kind == "source")
+		{
+			spawn_source(minx, maxx, miny, maxy, normalize_sound_path(name));
+			update_bounds(maxx, maxy);
+			return;
+		}
+
+		if (kind == "collider")
+		{
+			spawn_collider(minx, maxx, miny, maxy, name);
+			update_bounds(maxx, maxy);
+			return;
+		}
+
+		if (kind == "object")
+		{
+			string object_sound = extra != "" ? normalize_sound_path(extra) : "";
+			string bump_sound = parts.length() > 7 ? normalize_sound_path(parts[7].trim_whitespace()) : "sounds\\misk\\bump.ogg";
+			spawn_object(minx, maxx, miny, maxy, name, object_sound, bump_sound);
+			update_bounds(maxx, maxy);
+			return;
+		}
+
+		if (kind == "door")
+		{
+			parse_door(parts, minx, maxx, miny, maxy);
+			return;
+		}
+
+		if (kind == "item")
+		{
+			parse_item(parts, minx, maxx, miny, maxy);
+			return;
+		}
+
+		if (kind == "shop")
+		{
+			parse_shop(parts, minx, maxx, miny, maxy);
+			return;
+		}
+
+		if (kind == "npc")
+		{
+			parse_npc(parts, minx, maxx, miny, maxy);
+			return;
+		}
+
+		if (kind == "trigger")
+		{
+			parse_trigger(parts, minx, maxx, miny, maxy);
+			return;
+		}
+
+		if (kind == "rat")
+		{
+			parse_rat(parts, minx, maxx, miny, maxy);
+			return;
+		}
+
+		if (kind == "battlezone")
+		{
+			parse_battlezone(parts, minx, maxx, miny, maxy);
+			return;
+		}
+	}
+
+	void parse_item(array<string>@ parts, int minx, int maxx, int miny, int maxy)
+	{
+		// item:minx:maxx:miny:maxy:id[:amount[:pickup_text]]
+		string id = parts[5].trim_whitespace();
+		int amount = parts.length() > 6 ? parse_int(parts[6].trim_whitespace()) : 1;
+		if (amount < 1) amount = 1;
+		string pickup_text = parts.length() > 7 ? parts[7].trim_whitespace() : "";
+		spawn_map_item(minx, maxx, miny, maxy, id, amount, pickup_text);
+		update_bounds(maxx, maxy);
+	}
+
+	void parse_rat(array<string>@ parts, int minx, int maxx, int miny, int maxy)
+	{
+		// rat:minx:maxx:miny:maxy:quest_id
+		string quest_id = parts.length() > 5 ? parts[5].trim_whitespace() : "";
+		spawn_rat(minx, maxx, miny, maxy, quest_id);
+		update_bounds(maxx, maxy);
+	}
+
+	void parse_npc(array<string>@ parts, int minx, int maxx, int miny, int maxy)
+	{
+		// npc:minx:maxx:miny:maxy:sound:scene_file
+		if (parts.length() < 7) return;
+		string snd = normalize_sound_path(parts[5].trim_whitespace());
+		string scene_path = parts[6].trim_whitespace();
+		spawn_scene_npc(minx, maxx, miny, maxy, snd, scene_path);
+		update_bounds(maxx, maxy);
+	}
+
+	void parse_trigger(array<string>@ parts, int minx, int maxx, int miny, int maxy)
+	{
+		// trigger:minx:maxx:miny:maxy:scene_file[:once]
+		if (parts.length() < 6) return;
+		string scene_path = parts[5].trim_whitespace();
+		bool once = parts.length() < 7 || parse_bool(parts[6].trim_whitespace());
+		spawn_trigger(minx, maxx, miny, maxy, scene_path, once);
+		update_bounds(maxx, maxy);
+	}
+
+	void parse_battlezone(array<string>@ parts, int minx, int maxx, int miny, int maxy)
+	{
+		// battlezone:minx:maxx:miny:maxy:enemy_spec:level_spec[:quest_id[:quest_increment]]
+		if (parts.length() < 7) return;
+		string enemy_spec = parts[5].trim_whitespace();
+		string level_spec = parts[6].trim_whitespace();
+		string quest_id = parts.length() > 7 ? parts[7].trim_whitespace() : "";
+		int quest_increment = parts.length() > 8 ? parse_int(parts[8].trim_whitespace()) : 0;
+		spawn_battle_zone(minx, maxx, miny, maxy, enemy_spec, level_spec, quest_id, quest_increment);
+		update_bounds(maxx, maxy);
+	}
+
+	void parse_shop(array<string>@ parts, int minx, int maxx, int miny, int maxy)
+	{
+		// shop:minx:maxx:miny:maxy:sound:welcome:cancel:buy_text[:item_id:price:...]
+		if (parts.length() < 9) return;
+		string snd = normalize_sound_path(parts[5].trim_whitespace());
+		string welcome = parts[6].trim_whitespace();
+		string cancel_text = parts[7].trim_whitespace();
+		string buy_text = parts[8].trim_whitespace();
+		spawn_shop(minx, maxx, miny, maxy, snd, welcome, cancel_text, buy_text, parts, 9);
+		update_bounds(maxx, maxy);
+	}
+
+	void parse_door(array<string>@ parts, int minx, int maxx, int miny, int maxy)
+	{
+		// door:minx:maxx:miny:maxy:destmap:dx:dy:text:loopsound:opensound:auto[:locked[:lockedtext]]
+		if (parts.length() < 12)
+			return;
+
+		string destmap = parts[5].trim_whitespace();
+		int destx = parse_int(parts[6].trim_whitespace());
+		int desty = parse_int(parts[7].trim_whitespace());
+		string endtext = parts[8].trim_whitespace();
+		string looptype = parts[9].trim_whitespace();
+		string opentype = parts[10].trim_whitespace();
+		bool automatic = parse_bool(parts[11].trim_whitespace());
+		bool locked = parts.length() > 12 ? parse_bool(parts[12].trim_whitespace()) : false;
+		string lockedtext = parts.length() > 13 ? parts[13].trim_whitespace() : "";
+		string key_item_id = parts.length() > 14 ? parts[14].trim_whitespace() : "";
+
+		spawn_travelpoint(minx, maxx, miny, maxy, destmap, destx, desty, endtext, looptype, opentype, automatic, locked, lockedtext, key_item_id);
+		update_bounds(maxx, maxy);
+	}
+
+	bool parse_bool(string value)
+	{
+		value = value.lower();
+		return value == "1" || value == "true" || value == "yes" || value == "on";
+	}
+
+	string normalize_sound_path(string sound_name)
+	{
+		if (sound_name == "") return "";
+		if (sound_name.find(":") == 1) return sound_name;
+		if (sound_name.starts_with("\\") || sound_name.starts_with("/")) return sound_name;
+		if (sound_name.lower().ends_with(".wav"))
+			return "sounds\\" + sound_name.substr(0, sound_name.length() - 4) + ".ogg";
+		return "sounds\\" + sound_name;
+	}
+
+	void set_music(string track_name)
+	{
+		music_path = track_name.trim_whitespace();
+	}
+
+	void update_bounds(int area_maxx, int area_maxy)
+	{
+		if (area_maxx > maxx) maxx = area_maxx;
+		if (area_maxy > maxy) maxy = area_maxy;
+	}
+
+	void add_area(int minx, int maxx, int miny, int maxy, string data1, string data2, int priority = 0, uint64 flags = 0)
+	{
+		m.add_area(minx, maxx, miny, maxy, 0, 0, 0, any(data1), data1, data2, "", priority, flags);
+		update_bounds(maxx, maxy);
+	}
+
+	void platform(int minx, int maxx, int miny, int maxy, string tile, string zone_name = "", int priority = 0)
+	{
+		add_area(minx, maxx, miny, maxy, tile, zone_name, priority);
+	}
+
+	void wall(int minx, int maxx, int miny, int maxy, string type, string zone_name = "")
+	{
+		add_area(minx, maxx, miny, maxy, "wall" + type, zone_name, 2);
+	}
+
+	void zone(int minx, int maxx, int miny, int maxy, string zone_name)
+	{
+		add_area(minx, maxx, miny, maxy, "", zone_name, -1);
+	}
+
+	bool is_wall(int x, int y, int z = 0)
+	{
+		return this.opIndex(x, y, 0).starts_with("wall");
+	}
+
+	bool disable_area(int x, int y, int priority = 0)
+	{
+		coordinate_map_area@ a = m.get_area(x, y, 0, priority);
+		if (a == null) return false;
+		a.unframe();
+		return true;
+	}
+
+	bool enable_area(int x, int y, int priority = 0)
+	{
+		coordinate_map_area@ a = m.get_area(x, y, 0, priority);
+		if (a == null) return false;
+		a.reframe();
+		return true;
+	}
+
+	string opIndex(int x, int y, int z = 0)
+	{
+		coordinate_map_area@ area = m.get_area(x, y, 0);
+		if (area == null) return "";
+		return area.data1;
+	}
+
+	string zone_at(int x, int y, int z = 0)
+	{
+		coordinate_map_area@ area = m.get_area(x, y, 0);
+		if (area == null) return "";
+		return area.data2;
+	}
+
+	coordinate_map_area@ area_at(int x, int y, int z = 0)
+	{
+		return m.get_area(x, y, 0);
+	}
+}

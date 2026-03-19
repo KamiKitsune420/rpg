@@ -1,0 +1,91 @@
+int last_collider_index = -1;
+
+class collider
+{
+    int minx;
+    int maxx;
+    int miny;
+    int maxy;
+    string interact_text;
+    string bump_sound;
+
+    collider(int min_x, int max_x, int min_y, int max_y, string text = "", string bump_sound_path = "sounds\\misk\\bump.ogg")
+    {
+        minx = min_x;
+        maxx = max_x;
+        miny = min_y;
+        maxy = max_y;
+        interact_text = text;
+        bump_sound = bump_sound_path;
+    }
+
+    bool contains(int x, int y)
+    {
+        return x >= minx && x <= maxx && y >= miny && y <= maxy;
+    }
+}
+
+collider@[] colliders(0);
+
+int add_collider(collider@ c)
+{
+    colliders.insert_last(c);
+    return int(colliders.length()) - 1;
+}
+
+void clear_colliders()
+{
+    colliders.resize(0);
+    last_collider_index = -1;
+}
+
+void spawn_collider(int minx, int maxx, int miny, int maxy, string interact_text)
+{
+    collider@ c = collider(minx, maxx, miny, maxy, interact_text);
+    add_collider(c);
+}
+
+int collider_index_at(int x, int y)
+{
+    for (uint i = 0; i < colliders.length(); i++)
+    {
+        if (colliders[i].contains(x, y))
+            return int(i);
+    }
+    return -1;
+}
+
+bool bump_collider(int x, int y)
+{
+    int idx = collider_index_at(x, y);
+    if (idx < 0)
+        return false;
+    last_collider_index = idx;
+    string bump_sound = colliders[idx].bump_sound;
+    if (bump_sound == "")
+        bump_sound = "sounds\\misk\\bump.ogg";
+    p.play_stationary(bump_sound, false);
+    return true;
+}
+
+int clamp_i(int value, int min_value, int max_value)
+{
+    if (value < min_value)
+        return min_value;
+    if (value > max_value)
+        return max_value;
+    return value;
+}
+
+bool can_interact(int idx, int x, int y)
+{
+    if (idx < 0 || idx >= int(colliders.length()))
+        return false;
+    collider@ c = @colliders[idx];
+    if (@c == null)
+        return false;
+    int nearest_x = clamp_i(x, c.minx, c.maxx);
+    int nearest_y = clamp_i(y, c.miny, c.maxy);
+    int dist = abs(x - nearest_x) + abs(y - nearest_y);
+    return dist == 1;
+}

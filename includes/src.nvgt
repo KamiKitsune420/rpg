@@ -1,0 +1,94 @@
+source@[] sources(0);
+
+class source
+{
+	int source_sound;
+	int lx;
+	int rx;
+	int miny;
+	int maxy;
+	string soundfile;
+	bool paused = false;
+	int id = -1;
+	bool p2;
+
+	source(int source_lx, int source_rx, int source_miny, int source_maxy, string file, bool source_paused = false, int source_id = -1)
+	{
+		lx = source_lx;
+		rx = source_rx;
+		miny = source_miny;
+		maxy = source_maxy;
+		soundfile = file;
+		source_sound = p.play_2d(soundfile, me.x, me.y, lx, miny, true);
+		id = source_id;
+		p.update_sound_2d(source_sound, lx, miny);
+		p.update_sound_range_2d(source_sound, 0, rx - lx, 0, maxy - miny);
+		paused = source_paused;
+		if (paused)
+			p.pause_sound(source_sound);
+		p2 = paused;
+	}
+}
+
+void sourcecheckloop()
+{
+	for (uint i = 0; i < sources.length(); i++)
+	{
+		if (sources[i].paused == sources[i].p2)
+			continue;
+		if (sources[i].paused)
+		{
+			p.pause_sound(sources[i].source_sound);
+			sources[i].p2 = true;
+		}
+		else
+		{
+			p.resume_sound(sources[i].source_sound);
+			sources[i].p2 = false;
+		}
+	}
+}
+
+void destroy_all_sources()
+{
+	for (uint i = 0; i < sources.length(); i++)
+		p.destroy_sound(sources[i].source_sound);
+	sources.resize(0);
+}
+
+void pause_all_sources()
+{
+	for (uint i = 0; i < sources.length(); i++)
+	{
+		p.pause_sound(sources[i].source_sound);
+		sources[i].paused = true;
+	}
+}
+
+void resume_all_sources()
+{
+	for (uint i = 0; i < sources.length(); i++)
+	{
+		p.resume_sound(sources[i].source_sound);
+		sources[i].paused = false;
+	}
+}
+
+void spawn_source(int lx, int rx, int miny, int maxy, string soundfile, bool paused = false, int id = -1)
+{
+	source s(lx, rx, miny, maxy, soundfile, paused, id);
+	sources.insert_last(s);
+}
+
+void destroy_source(int id)
+{
+	for (uint i = 0; i < sources.length(); i++)
+	{
+		if (sources[i].id == id && id > -1)
+		{
+			p.destroy_sound(sources[i].source_sound);
+			sources.remove_at(i);
+			return;
+		}
+	}
+}

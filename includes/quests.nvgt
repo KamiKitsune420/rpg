@@ -1,0 +1,110 @@
+class quest_entry
+{
+	string id;
+	string name;
+	string description;
+	string requirements;
+	int percent_completed;
+	bool completed;
+	bool hidden;
+
+	quest_entry()
+	{
+		id = "";
+		name = "";
+		description = "";
+		requirements = "";
+		percent_completed = 0;
+		completed = false;
+		hidden = false;
+	}
+
+	quest_entry(string quest_id, string quest_name, string quest_description, string quest_requirements = "", int percent = 0, bool quest_hidden = false)
+	{
+		id = quest_id;
+		name = quest_name;
+		description = quest_description;
+		requirements = quest_requirements;
+		percent_completed = percent;
+		completed = percent >= 100;
+		hidden = quest_hidden;
+	}
+}
+
+class quest_log
+{
+	quest_entry[] quests;
+
+	void clear()
+	{
+		quests.resize(0);
+	}
+
+	int find_quest(string quest_id)
+	{
+		for (uint i = 0; i < quests.length(); i++)
+		{
+			if (quests[i].id == quest_id)
+				return int(i);
+		}
+		return -1;
+	}
+
+	bool has_quest(string quest_id)
+	{
+		return find_quest(quest_id) >= 0;
+	}
+
+	bool add_quest(string quest_id, string quest_name, string quest_description, string quest_requirements = "", int percent = 0, bool quest_hidden = false)
+	{
+		if (has_quest(quest_id))
+			return false;
+		quests.insert_last(quest_entry(quest_id, quest_name, quest_description, quest_requirements, percent, quest_hidden));
+		return true;
+	}
+
+	bool set_progress(string quest_id, int percent)
+	{
+		int idx = find_quest(quest_id);
+		if (idx < 0)
+			return false;
+		if (percent < 0)
+			percent = 0;
+		if (percent > 100)
+			percent = 100;
+		quests[idx].percent_completed = percent;
+		quests[idx].completed = percent >= 100;
+		return true;
+	}
+
+	string entry_name(int idx)
+	{
+		if (idx < 0 || idx >= int(quests.length()))
+			return "";
+		return quests[idx].name + ". " + quests[idx].percent_completed + " percent completed.";
+	}
+
+	string entry_description(int idx)
+	{
+		if (idx < 0 || idx >= int(quests.length()))
+			return "";
+		string text = quests[idx].name + ". " + quests[idx].percent_completed + " percent completed.\r\n" + quests[idx].description;
+		if (quests[idx].requirements != "")
+			text += "\r\nRequirements: " + quests[idx].requirements;
+		return text;
+	}
+}
+
+void award_quest(string quest_id, string quest_name, string quest_description, string quest_requirements, int percent = 0, bool hidden = false)
+{
+	if (!quests.add_quest(quest_id, quest_name, quest_description, quest_requirements, percent, hidden))
+		return;
+	fanfare.play("sounds\\Fanfare\\newquest.ogg", @music);
+	dlg_show("New quest alert!");
+	dlg_show("You have just received a new quest.");
+	mdlg(quest_name + "\r\n" + quest_description + "\r\nRequirements: " + quest_requirements);
+}
+
+void update_quest_progress()
+{
+}

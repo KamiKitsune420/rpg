@@ -1,0 +1,192 @@
+travelpoint@[]travelpoints(0);
+string resolve_door_sound_path(string sound_name)
+{
+if (sound_name=="")
+return "";
+if (sound_name.find(":")==1)
+return sound_name;
+if (sound_name.starts_with("\\") or sound_name.starts_with("/"))
+return sound_name;
+if (sound_name.lower().ends_with(".wav"))
+return "sounds\\"+sound_name.substr(0, sound_name.length()-4)+".ogg";
+if (sound_name.find(".")>-1)
+return "sounds\\"+sound_name;
+return "sounds\\"+sound_name+".ogg";
+}
+class travelpoint
+{
+bool automatic, locked;
+int opensound, travsound;
+double minx,maxx,miny,maxy;
+int destx,desty;
+string looptype;
+string opentype;
+string destmap;
+string endtext;
+string lockedtext;
+travelpoint(double mx,double mx2,double my,double my2,string dm,int dx,int dy,string et,string lsound,string osound,bool acl,bool ldk, string ltext)
+{
+minx=mx;
+maxx=mx2;
+miny=my;
+maxy=my2;
+destmap=dm;
+destx=dx;
+desty=dy;
+endtext=et;
+looptype=lsound;
+opentype=osound;
+automatic=acl;
+locked=ldk;
+lockedtext=ltext;
+float door_pitch = 85.0 + float((int(minx) * 7 + int(miny) * 13) % 30);
+travsound = doorpool.play_extended_2d(resolve_door_sound_path(looptype), me.x, me.y, minx, miny, 0.0, 0, 0, 0, 0, true, 0.0, 0.0, 0.0, door_pitch);
+doorpool.update_sound_range_2d(travsound, 0, maxx-minx, 0, maxy-miny);
+}
+}
+
+class locked_door : game_object
+{
+	int tp_idx;
+	string locked_text;
+	string key_item_id;
+	bool unlocked;
+
+	locked_door(int minx, int maxx, int miny, int maxy, int tp_index, string ltext, string key_id)
+	{
+		super(minx, maxx, miny, maxy, ltext, "");
+		tp_idx = tp_index;
+		locked_text = ltext;
+		key_item_id = key_id;
+		unlocked = false;
+	}
+
+	bool contains(int x, int y)
+	{
+		if (unlocked) return false;
+		return x >= minx && x <= maxx && y >= miny && y <= maxy;
+	}
+
+	void interact()
+	{
+		if (unlocked) return;
+		string ikey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		record_object_interaction(ikey);
+		lower_world_audio_for_menu();
+		mdlg(locked_text);
+
+		if (key_item_id != "" && inventory.find_item(key_item_id) >= 0)
+		{
+			custom_menu key_menu;
+			key_menu.intro_text = "You have a key. Use it?";
+			key_menu.click_sound = "sounds\\ui\\menumove.ogg";
+			key_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+			key_menu.add_item("Yes", "yes");
+			key_menu.add_item("No", "no");
+			int choice = key_menu.run(0, true);
+			string id = choice >= 1 ? key_menu.get_item_id(choice) : "no";
+
+			if (id == "yes")
+			{
+				int key_idx = inventory.find_item(key_item_id);
+				if (key_idx >= 0)
+				{
+					inventory.items[key_idx].quantity--;
+					if (inventory.items[key_idx].quantity <= 0)
+						inventory.items.remove_at(key_idx);
+				}
+				resume_world_audio_after_menu();
+				int unlock_slot = p.play_stationary("sounds\\misk\\unlock.ogg", false);
+				while (p.sound_is_active(unlock_slot))
+					wait(5);
+				unlocked = true;
+				if (tp_idx >= 0 && tp_idx < int(travelpoints.length()))
+					travelpoints[tp_idx].locked = false;
+				return;
+			}
+		}
+
+		resume_world_audio_after_menu();
+	}
+}
+
+void transition_to_map(string destmap, int destx, int desty, string opentype)
+{
+	wt.stop();
+	objpool.pause_all();
+	doorpool.pause_all();
+	pause_all_sources();
+	int openslot = p.play_stationary(resolve_door_sound_path(opentype), false);
+	while (p.sound_is_active(openslot))
+		wait(5);
+	me.x = destx;
+	me.y = desty;
+	destroy_all_travelpoints();
+	current_map_path = destmap;
+	gm.load_map(destmap);
+	record_map_visit(current_map_path);
+	music.sync_map_music(gm.music_path);
+	objpool.resume_all();
+	doorpool.resume_all();
+	resume_all_sources();
+	current_zone = "";
+	check_zone();
+	wt.start();
+	wt.update(gm, me.x, me.y);
+}
+
+void travelcheck()
+{
+	for (uint i = 0; i < travelpoints.length(); i++)
+	{
+		if (travelpoints[i].minx > me.x or travelpoints[i].maxx < me.x or travelpoints[i].miny > me.y or travelpoints[i].maxy < me.y)
+			continue;
+		bool triggered = travelpoints[i].automatic or (key_up(KEY_LSHIFT) and key_up(KEY_RSHIFT) and key_repeating(KEY_RETURN));
+		if (!triggered or travelpoints[i].locked)
+			continue;
+		transition_to_map(travelpoints[i].destmap, travelpoints[i].destx, travelpoints[i].desty, travelpoints[i].opentype);
+		return;
+	}
+}
+void spawn_travelpoint(double minx, double maxx, double miny, double maxy, string destmap, int destx, int desty, string endtext, string looptype, string opentype, bool automatic, bool locked, string lockedtext = "", string key_item_id = "")
+{
+	travelpoint tp1(minx, maxx, miny, maxy, destmap, destx, desty, endtext, looptype, opentype, automatic, locked, lockedtext);
+	travelpoints.insert_last(tp1);
+	if (locked)
+	{
+		string text = lockedtext;
+		if (text == "") text = "Locked.";
+		int tp_idx = int(travelpoints.length()) - 1;
+		if (key_item_id != "")
+		{
+			locked_door@ ld = locked_door(int(minx), int(maxx), int(miny), int(maxy), tp_idx, text, key_item_id);
+			int obj_idx = add_collider(ld);
+			if (obj_idx >= int(objects.length()))
+				objects.resize(obj_idx + 1);
+			@objects[obj_idx] = ld;
+		}
+		else
+		{
+			spawn_collider(int(minx), int(maxx), int(miny), int(maxy), text);
+		}
+	}
+}
+void destroy_all_travelpoints()
+{
+for(uint i=0; i<travelpoints.length(); i++)
+{
+doorpool.destroy_sound(travelpoints[i].travsound);
+doorpool.destroy_sound(travelpoints[i].opensound);
+}
+travelpoints.resize(0);
+}
+
+bool door_at(int x, int y)
+{
+    for (uint i = 0; i < travelpoints.length(); i++)
+    {
+        if (travelpoints[i].minx <= x && travelpoints[i].maxx >= x && travelpoints[i].miny <= y && travelpoints[i].maxy >= y)
+            return true;
+    }
+    return false;
+}

@@ -1,0 +1,133 @@
+string player_name = "";
+scene_manager awakening_scene;
+scene_manager awakening_after_stats_scene;
+scene_manager intro_scene;
+
+string stat_description(int idx)
+{
+	if (idx == 0) return "Strength affects raw physical force and feeds your physical attack and HP.";
+	if (idx == 1) return "Defense helps you endure direct damage and hold your ground.";
+	if (idx == 2) return "Wisdom sharpens magical sense and feeds your magic attack and mana.";
+	if (idx == 3) return "Intelligence improves magical attack, understanding, and feeds your mana and HP.";
+	if (idx == 4) return "Luck influences fortunate breaks, strange survival, and uncertain outcomes.";
+	if (idx == 5) return "Vitality governs life force and directly feeds your HP pool.";
+	if (idx == 6) return "Stamina supports endurance and feeds your mana pool.";
+	if (idx == 7) return "Speed determines how quickly you act in battle and affects your turn order.";
+	return "";
+}
+
+void allocate_starting_stats()
+{
+	player.reset_base_stats();
+	int points_left = 20;
+	int selection = 0;
+	speak("Right then. This is a stat screen. Very official. Every stat starts at five, and I have given you twenty extra points because I cheated on your behalf, which I feel no guilt about whatsoever. Up and down to move between stats. Left and right to spend points or take them back. Space to hear what a stat does. Enter when you are done. You are starting on " + player.stat_name(selection) + ", " + string(player.stat_value(selection)) + ".", true);
+
+	while (true)
+	{
+		wait(5);
+
+		if (key_pressed(KEY_UP))
+		{
+			selection = (selection - 1 + 8) % 8;
+			speak(player.stat_name(selection) + ", " + string(player.stat_value(selection)), true);
+		}
+
+		if (key_pressed(KEY_DOWN))
+		{
+			selection = (selection + 1) % 8;
+			speak(player.stat_name(selection) + ", " + string(player.stat_value(selection)), true);
+		}
+
+		if (key_pressed(KEY_RIGHT))
+		{
+			if (points_left > 0)
+			{
+				player.set_stat_value(selection, player.stat_value(selection) + 1);
+				points_left--;
+				p.play_stationary("sounds\\ui\\Increment.ogg", false);
+				speak(string(player.stat_value(selection)), true);
+			}
+			else
+				speak("No points left.", true);
+		}
+
+		if (key_pressed(KEY_LEFT))
+		{
+			if (player.stat_value(selection) > 5)
+			{
+				player.set_stat_value(selection, player.stat_value(selection) - 1);
+				points_left++;
+				p.play_stationary("sounds\\ui\\Decrement.ogg", false);
+				speak(string(player.stat_value(selection)), true);
+			}
+			else
+				speak("That stat cannot go below five.", true);
+		}
+
+		if (key_pressed(KEY_TAB))
+			speak(player.stat_name(selection) + ", " + string(player.stat_value(selection)), true);
+
+		if (key_pressed(KEY_SPACE))
+			speak(stat_description(selection), true);
+
+		if (key_pressed(KEY_RETURN))
+		{
+			if (points_left > 0)
+			{
+				speak("You still have " + string(points_left) + " points to assign.", true);
+				continue;
+			}
+			speak("Vessel complete. HP " + string(player.hp) + ". Physical attack " + string(player.attack) + ". Magic attack " + string(player.magic_attack) + ". Mana " + string(player.mana) + ".", true);
+			return;
+		}
+	}
+}
+
+void start_new_game()
+{
+	gm.load_map("data\\maps\\soul_lab.map");
+	current_map_path = "data\\maps\\soul_lab.map";
+	music.sync_map_music(gm.music_path);
+	me.x = 12;
+	me.y = 12;
+	me.z = 0;
+	current_zone = "";
+	wt.update(gm, me.x, me.y);
+
+	awakening_scene.clear_variables();
+	awakening_scene.play("data\\story\\awakening.txt");
+
+	string chosen_name = awakening_scene.get_variable("player_name");
+	chosen_name = chosen_name.trim_whitespace();
+	if (chosen_name == "")
+		chosen_name = "Traveler";
+
+	player_name = chosen_name;
+	player.reset(player_name);
+	allocate_starting_stats();
+	player.restore_to_full();
+	grant_starting_skills(true);
+	awakening_after_stats_scene.clear_variables();
+	awakening_after_stats_scene.set_variable("player_name", player_name);
+	awakening_after_stats_scene.play("data\\story\\awakening_after_stats.txt");
+	inventory.clear();
+	inventory.add_item("journal", "Travel Journal", "A worn notebook for names, warnings, and thoughts you do not want to lose.");
+	quests.clear();
+
+	gm.load_map("data\\maps\\house.map");
+	current_map_path = "data\\maps\\house.map";
+	music.sync_map_music(gm.music_path);
+	me.x = 12;
+	me.y = 4;
+	me.z = 0;
+	current_zone = "";
+	wt.update(gm, me.x, me.y);
+	stored_play_time_seconds = 0;
+	play_time_timer.restart();
+
+	intro_scene.clear_variables();
+	intro_scene.set_variable("player_name", player_name);
+	intro_scene.play("data\\story\\intro.txt");
+	check_zone();
+}

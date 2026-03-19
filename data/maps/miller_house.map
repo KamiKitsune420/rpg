@@ -1,0 +1,16 @@
+music:village1.ogg
+zone:0:24:0:24:Doran Miller's house
+platform:0:24:0:24:hardwood:Doran Miller's house
+wall:0:24:24:24:wood:house
+wall:0:0:0:24:wood:house
+wall:24:24:0:24:wood:house
+wall:0:24:0:0:wood:house
+wall:6:11:14:14:wood:alcove
+wall:16:16:6:12:wood:alcove
+object:3:5:19:21:"Morning. Mind the shavings. I'm finishing a chair leg and I'd rather not carve my own thumb instead.":objects\npc.ogg
+object:17:20:17:19:"If you've torn a sleeve or a hem, leave it on the bench. I'll get to it after breakfast.":objects\npc.ogg
+object:4:8:7:9:A heavy workbench covered in wood shavings and half-carved chair legs.:objects\table.ogg
+object:18:21:9:11:A neat row of polished tools hangs above a folded measuring string.
+object:2:5:12:15:A narrow bed tucked under a patchwork quilt.:objects\bed.ogg
+object:11:14:20:22:A kettle murmurs on a small iron stove.:objects\table.ogg
+door:12:12:0:0:data\maps\village.map:66:81:You step back outside beside the Miller cottage.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false

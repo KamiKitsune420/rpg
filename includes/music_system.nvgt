@@ -1,0 +1,109 @@
+class music_system
+{
+	sound current_music;
+	string current_track = "";
+	int base_volume = -6;
+	int fade_delay = 1;
+	int fade_target = -50;
+
+	string normalize_track_path(string track_name)
+	{
+		track_name = track_name.trim_whitespace();
+		if (track_name == "")
+			return "";
+		if (track_name.find(":") == 1)
+			return track_name;
+		if (track_name.starts_with("\\") || track_name.starts_with("/"))
+			return track_name;
+		if (track_name.lower().starts_with("sounds\\") || track_name.lower().starts_with("sounds/"))
+		{
+			if (track_name.lower().ends_with(".wav"))
+				return track_name.substr(0, track_name.length() - 4) + ".ogg";
+			return track_name;
+		}
+		if (track_name.find("\\") > -1 || track_name.find("/") > -1)
+		{
+			if (track_name.lower().ends_with(".wav"))
+				return "sounds\\" + track_name.substr(0, track_name.length() - 4) + ".ogg";
+			return "sounds\\" + track_name;
+		}
+		if (track_name.find(".") < 0)
+			return "sounds\\MUSIC\\" + track_name + ".ogg";
+		if (track_name.lower().ends_with(".wav"))
+			return "sounds\\MUSIC\\" + track_name.substr(0, track_name.length() - 4) + ".ogg";
+		return "sounds\\MUSIC\\" + track_name;
+	}
+
+	string canonical_track_key(string track_name)
+	{
+		return normalize_track_path(track_name).replace("/", "\\", true).lower();
+	}
+
+	bool is_playing_track(string track_name)
+	{
+		return current_track != "" && current_track == canonical_track_key(track_name) && current_music.active;
+	}
+
+	void fade_out_and_stop(int step_delay = -1)
+	{
+		if (!current_music.active)
+		{
+			current_track = "";
+			return;
+		}
+
+		if (step_delay < 0)
+			step_delay = fade_delay;
+
+		while (current_music.playing && current_music.volume > fade_target)
+		{
+			current_music.volume -= 1;
+			wait(step_delay);
+		}
+
+		current_music.stop();
+		current_track = "";
+	}
+
+	bool play_track(string track_name, bool quick_transition = false)
+	{
+		string normalized = normalize_track_path(track_name);
+		string key = canonical_track_key(track_name);
+
+		if (key == current_track && current_music.active)
+		{
+			if (!current_music.playing)
+			{
+				current_music.volume = base_volume;
+				current_music.play_looped();
+			}
+			return true;
+		}
+
+		if (current_music.active && current_music.playing)
+		{
+			if (quick_transition)
+				fade_out_and_stop(1);
+			else
+				fade_out_and_stop();
+		}
+		else
+			current_track = "";
+
+		if (normalized == "")
+			return true;
+
+		if (!current_music.load(normalized))
+			return false;
+
+		current_music.volume = base_volume;
+		current_music.play_looped();
+		current_track = key;
+		return true;
+	}
+
+	void sync_map_music(string track_name)
+	{
+		play_track(track_name, true);
+	}
+}

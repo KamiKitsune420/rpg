@@ -1,0 +1,14 @@
+music:soul.ogg
+zone:0:24:0:24:Soul lab
+platform:0:24:0:24:metal:Soul lab
+wall:0:24:24:24:building:Soul lab
+wall:0:0:0:24:building:Soul lab
+wall:24:24:0:24:building:Soul lab
+wall:0:24:0:0:building:Soul lab
+wall:6:18:18:18:building:Observation frame
+wall:6:6:14:18:building:Observation frame
+wall:18:18:14:18:building:Observation frame
+object:10:14:10:14:A white-metal platform where your new body was forced into shape.
+object:8:9:16:17:A stack of silver instruments laid out with ceremonial precision.
+object:15:16:16:17:A glass cylinder full of dim liquid and drifting gold sparks.
+object:11:13:20:22:She is there, laughing softly to herself, as if this has all gone almost exactly the way she wanted.:objects\shrine.ogg

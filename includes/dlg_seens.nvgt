@@ -1,0 +1,64 @@
+void dlg_show(string message, int timeout=-1)
+{
+timer timeouter;
+p.play_stationary("sounds/ui/story.ogg", false);
+speak(message);
+while(true)
+{
+if (timeout>-1 and timeouter.elapsed>=timeout)
+return;
+if (key_pressed(KEY_C))
+{
+p.play_stationary("sounds/dlg/copy.ogg",false);
+speak("Copied");
+clipboard_set_text(message);
+}
+if (key_pressed(KEY_LEFT) or key_pressed(KEY_RIGHT) or key_pressed(KEY_UP) or key_pressed(KEY_DOWN))
+{
+speak(message);
+}
+if (key_pressed(KEY_RETURN) or key_down(KEY_A))
+{
+break;
+}
+wait(5);
+}
+}
+void mdlg(string messages)
+{
+p.play_stationary("sounds/dlg/open.ogg",false);
+string[] d = messages.split("\r\n", false);
+dlg_show(d[0]);
+if (d.length()>1)
+{
+for (uint i=1; i<d.length(); i++)
+{
+p.play_stationary("sounds/dlg/scroll.ogg",false);
+dlg_show(d[i]);
+}
+}
+p.play_stationary("sounds/dlg/close.ogg",false);
+}
+void dlgplay(string dlgsound, bool enableenter=true, bool fade=false, int fadetime=40)
+{
+sound dlgaudio;
+dlgaudio.load(dlgsound);
+dlgaudio.play();
+while(dlgaudio.playing)
+{
+wait(5);
+if(key_pressed(KEY_RETURN) and enableenter==true or key_down(KEY_A) and enableenter==true)
+{
+if (fade==true)
+{
+while (dlgaudio.volume>=-40)
+{
+dlgaudio.volume=dlgaudio.volume-2;
+wait(fadetime);
+}
+}
+dlgaudio.stop();
+break;
+}
+}
+}

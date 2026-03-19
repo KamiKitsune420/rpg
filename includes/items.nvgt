@@ -1,0 +1,166 @@
+class item_definition
+{
+	string id;
+	string name;
+	string description;
+	int hp_restore;
+	int mana_restore;
+	bool usable_outside_battle;
+	bool sellable;
+	int sell_price;
+
+	item_definition(string _id, string _name, string _desc, int _hp = 0, int _mana = 0, bool _usable = true, bool _sellable = false, int _sell_price = 0)
+	{
+		id = _id;
+		name = _name;
+		description = _desc;
+		hp_restore = _hp;
+		mana_restore = _mana;
+		usable_outside_battle = _usable;
+		sellable = _sellable;
+		sell_price = _sell_price;
+	}
+}
+
+item_definition@[] item_registry;
+
+void register_items()
+{
+	item_registry.resize(0);
+
+	// HP potions
+	item_registry.insert_last(item_definition("potion",       "Potion",       "A bottle of green, swirling liquid. Drinking this heals 50 HP.",                       50, 0,  true, true, 25));
+	item_registry.insert_last(item_definition("mega_potion",  "Mega Potion",  "A bottle of deep blue liquid. Drinking this heals 80 HP.",                             80, 0,  true, true, 40));
+	item_registry.insert_last(item_definition("hyper_potion", "Hyper Potion", "A bottle of bright purple liquid. Drinking this heals 130 HP.",                       130, 0,  true, true, 65));
+	item_registry.insert_last(item_definition("giga_potion",  "Giga Potion",  "A bottle of blazing red liquid, warm to the touch. Drinking this heals 180 HP.",      180, 0,  true, true, 90));
+
+	// Mana potions
+	item_registry.insert_last(item_definition("mana_potion",      "Mana Potion",      "A small vial of shimmering silver liquid. Drinking this restores 50 mana.",   0, 50,  true, true, 25));
+	item_registry.insert_last(item_definition("mega_mana_potion", "Mega Mana Potion", "A large vial of shimmering silver liquid. Drinking this restores 100 mana.",  0, 100, true, true, 50));
+
+	// Food and field supplies
+	item_registry.insert_last(item_definition("bread",        "Bread",        "A plain loaf, still fresh. Restores 20 HP.",                           20, 0,   true, true, 5));
+	item_registry.insert_last(item_definition("dried_fruit",  "Dried Fruit",  "Sweet and dense. Restores 15 HP and 10 mana.",                         15, 10,  true, true, 7));
+	item_registry.insert_last(item_definition("jerky",        "Jerky",        "Tough, salted meat. Restores 30 HP.",                                  30, 0,   true, true, 10));
+	item_registry.insert_last(item_definition("healing_herb", "Healing Herb", "A bitter herb used by travelers. Restores 25 HP.",                     25, 0,   true, true, 10));
+	item_registry.insert_last(item_definition("hearty_stew",  "Hearty Stew",  "A thick, warm stew in a clay bowl. Restores 60 HP and 20 mana.",       60, 20,  true, true, 20));
+	item_registry.insert_last(item_definition("honeycomb",    "Honeycomb",    "Sweet and sticky. Restores 10 HP and 15 mana.",                        10, 15,  true, true, 5));
+
+	// Non-usable
+	item_registry.insert_last(item_definition("journal", "Travel Journal", "A worn notebook for names, warnings, and thoughts you do not want to lose.", 0, 0, false, false, 0));
+
+	// Keys
+	item_registry.insert_last(item_definition("storage_key", "Storage Key", "A brass key. Dara pressed it into your hand herself. It opens the back door of the shopping center warehouse.", 0, 0, false, false, 0));
+}
+
+item_definition@ find_item_def(string id)
+{
+	for (uint i = 0; i < item_registry.length(); i++)
+	{
+		if (item_registry[i].id == id)
+			return @item_registry[i];
+	}
+	return null;
+}
+
+string use_item(string item_id)
+{
+	item_definition@ def = find_item_def(item_id);
+	if (@def == null)
+		return "";
+
+	if (!def.usable_outside_battle || (def.hp_restore == 0 && def.mana_restore == 0))
+		return "";
+
+	string result = "";
+	bool consumed = false;
+
+	if (def.hp_restore > 0)
+	{
+		int max_hp = player.hp;
+		if (player.current_hp >= max_hp)
+		{
+			result += "HP is already full.";
+		}
+		else
+		{
+			int healed = def.hp_restore;
+			if (player.current_hp + healed > max_hp)
+				healed = max_hp - player.current_hp;
+			player.current_hp += healed;
+			result += "Restored " + string(healed) + " HP. HP: " + string(player.current_hp) + " / " + string(max_hp) + ".";
+			consumed = true;
+		}
+	}
+
+	if (def.mana_restore > 0)
+	{
+		int max_mana = player.mana;
+		if (player.current_mana >= max_mana)
+		{
+			if (result != "") result += " ";
+			result += "Mana is already full.";
+		}
+		else
+		{
+			int restored = def.mana_restore;
+			if (player.current_mana + restored > max_mana)
+				restored = max_mana - player.current_mana;
+			player.current_mana += restored;
+			if (result != "") result += " ";
+			result += "Restored " + string(restored) + " mana. Mana: " + string(player.current_mana) + " / " + string(max_mana) + ".";
+			consumed = true;
+		}
+	}
+
+	if (consumed)
+	{
+		p.play_stationary("sounds\\misk\\heal.ogg", false);
+		int idx = inventory.find_item(item_id);
+		if (idx >= 0)
+		{
+			inventory.items[idx].quantity--;
+			if (inventory.items[idx].quantity <= 0)
+				inventory.items.remove_at(idx);
+		}
+	}
+
+	return result;
+}
+
+int play_gold_sound(int amount)
+{
+	string f;
+	if (amount < 50)          f = "sounds\\misk\\gold1.ogg";
+	else if (amount < 1000)   f = "sounds\\misk\\gold50.ogg";
+	else if (amount < 10000)  f = "sounds\\misk\\gold1000.ogg";
+	else if (amount < 50000)  f = "sounds\\misk\\gold10000.ogg";
+	else if (amount < 100000) f = "sounds\\misk\\gold50000.ogg";
+	else                      f = "sounds\\misk\\gold100000.ogg";
+	return p.play_stationary(f, false);
+}
+
+void gain_gold(int amount, bool wait_for_sound = false)
+{
+	if (amount <= 0) return;
+	player.gold += amount;
+	int slot = play_gold_sound(amount);
+	if (wait_for_sound && slot >= 0)
+	{
+		while (p.sound_is_active(slot))
+			wait(5);
+	}
+}
+
+void lose_gold(int amount, bool wait_for_sound = false)
+{
+	if (amount <= 0) return;
+	if (amount > player.gold) amount = player.gold;
+	player.gold -= amount;
+	int slot = play_gold_sound(amount);
+	if (wait_for_sound && slot >= 0)
+	{
+		while (p.sound_is_active(slot))
+			wait(5);
+	}
+}

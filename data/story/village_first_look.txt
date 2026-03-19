@@ -1,0 +1,15 @@
+wait 300
+text The morning air catches you unprepared. Cool. Still carrying last night in it.
+text Yuri village opens up around you. The well, the paths, the low rooftops that have been here long enough to forget they were ever new.
+wait 400
+text To the north, the orphanage. You have walked past it before. You are fairly certain of that.
+text To the northwest, the temple steps. Already faintly scented with incense, even from here.
+text Somewhere southeast, the shopping center, if the sign is still telling the truth.
+wait 300
+text And in the east: the gate. Shut. A guard stands beside it the way guards stand when they have been told not to explain themselves.
+text You know what that means. Or you will.
+wait 500
+text The village is going about its morning. Careful, quiet, looking sideways at things it would rather not name out loud.
+text You recognize the feeling.
+text You take a breath.
+text The day is already moving whether you are ready or not.

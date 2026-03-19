@@ -1,0 +1,14 @@
+music:village1.ogg
+zone:0:14:0:12:Orphan room
+platform:0:14:0:12:hardwood:Orphan room
+platform:5:10:2:6:carpet:Rug
+wall:0:14:12:12:wood:room
+wall:0:0:0:12:wood:room
+wall:14:14:0:12:wood:room
+wall:0:14:0:0:wood:room
+wall:0:0:0:4:wood:room
+wall:0:0:6:12:wood:room
+object:3:6:8:10:"Pella keeps letters in the loose floorboard. Not stolen letters. Just found ones. That's a different class of trouble.":objects\npc.ogg
+object:8:11:5:7:A little chest with its latch missing sits under the window.:objects\table.ogg
+object:4:9:3:5:A bed under a carefully folded quilt stitched with tiny blue squares.:objects\bed.ogg
+door:0:0:5:5:data\maps\orphanage_hall.map:19:13:You step back into the orphanage hall.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false

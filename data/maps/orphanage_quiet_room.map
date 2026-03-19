@@ -1,0 +1,11 @@
+music:village1.ogg
+zone:0:30:0:30:Yuri orphanage quiet room
+platform:0:30:0:30:hardwood:Yuri orphanage quiet room
+wall:0:30:30:30:wood:quiet_room
+wall:0:0:0:30:wood:quiet_room
+wall:30:30:0:30:wood:quiet_room
+wall:0:11:0:0:wood:quiet_room
+wall:13:30:0:0:wood:quiet_room
+door:12:12:0:0:data\maps\orphanage.map:38:39:You step back into the common room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
+object:12:12:12:12:"I have to stay hear, cause I punched charly in the face. buh, it wass is fault, not fare":objects\npc.ogg
+object:2:2:29:29:"the peace of paper depicks a crewd drawing of fireball with wings.":objects\paper.ogg

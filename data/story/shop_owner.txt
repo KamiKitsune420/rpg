@@ -1,0 +1,51 @@
+if quest_complete rat_problem
+  if has_flag rat_reward_given
+    text Dara nods when she sees you. The storeroom door is open behind her for the first time in weeks.
+    text Good work. Come back if you need anything.
+    stop_scene
+  end
+  text Dara's expression shifts when you walk in. Something tight in her face lets go.
+  wait 200
+  say Dara
+  text All ten?
+  wait 300
+  text You nod.
+  wait 200
+  say Dara
+  text Good. That is all I needed to hear.
+  text She reaches under the counter and sets down a coin purse. Something wrapped in cloth beside it.
+  wait 300
+  say Dara
+  text For your trouble. And if you ever want steady work, you know where to find me.
+  give_gold 200
+  give_item "potion" 2
+  set_flag rat_reward_given
+  stop_scene
+end
+if has_flag shop_owner_met
+  text Dara glances toward the storeroom door. Her jaw is set.
+  say Dara
+  text Still back there. I can hear them at night.
+  wait 200
+  text You have the key. Come back when the storeroom is clear.
+  stop_scene
+end
+text A woman stands near the back of the alcove, arms crossed, watching you the way someone watches a problem they have been waiting to name.
+wait 300
+text She straightens when you approach.
+say Dara
+text I am Dara. I run this center. Or I did, until three weeks ago when something moved into my storeroom.
+wait 400
+say Dara
+text Rats. Larger than they should be. I have lost two crates of stock and a night worker who had the sense to leave before I did.
+wait 300
+say Dara
+text I need ten of them gone. I cannot go back there myself. The smell alone.
+wait 400
+text She stops. Clears her throat. Then holds out a brass key.
+wait 200
+say Dara
+text Go through the back door and clear them out. I will make it worth your time.
+set_flag shop_owner_met
+quest "rat_problem" "Rat Problem" "Dara, who runs the Yuri Shopping Center, needs the rats cleared from her warehouse." "Kill 10 rats in the shopping center warehouse."
+give_item "storage_key" 1

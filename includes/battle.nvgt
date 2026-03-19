@@ -1,0 +1,555 @@
+class battle_enemy
+{
+	enemy_definition@ def;
+	int level;
+	int current_hp;
+	int max_hp;
+	int attack;
+	int defense;
+	float position;  // stereo field -1.0 to 1.0
+	float move_dir;
+	float move_speed;
+	bool dead;
+
+	battle_enemy(enemy_definition@ _def, int _level)
+	{
+		@def = @_def;
+		level = _level;
+		max_hp     = def.get_hp(_level);
+		current_hp = max_hp;
+		attack     = def.get_attack(_level);
+		defense    = def.get_defense(_level);
+		position   = 0.0f;
+		move_dir   = int(random(0, 1)) == 0 ? -1.0f : 1.0f;
+		move_speed = 0.35f + float(level) * 0.04f;
+		dead = false;
+	}
+}
+
+class battle_zone
+{
+	int minx, maxx, miny, maxy;
+	string enemy_spec;
+	string level_spec;
+	string quest_id;
+	int quest_increment;
+	timer cooldown;
+	bool player_was_in;
+
+	battle_zone(int _minx, int _maxx, int _miny, int _maxy, string espec, string lspec, string qid = "", int qinc = 0)
+	{
+		minx = _minx; maxx = _maxx; miny = _miny; maxy = _maxy;
+		enemy_spec = espec;
+		level_spec = lspec;
+		quest_id = qid;
+		quest_increment = qinc;
+		player_was_in = false;
+		cooldown.restart();
+	}
+
+	void check(int x, int y)
+	{
+		bool in_area = x >= minx && x <= maxx && y >= miny && y <= maxy;
+		if (!in_area) { player_was_in = false; return; }
+		if (!player_was_in) player_was_in = true;
+		if (cooldown.elapsed < 8000) return;
+		if (int(random(0, 32)) != 0) return;
+		cooldown.restart();
+		string enemy_id = resolve_spec(enemy_spec);
+		int lvl = resolve_int_spec(level_spec);
+		if (enemy_id == "") return;
+		battle.start(enemy_id, lvl, quest_id, quest_increment);
+	}
+
+	string resolve_spec(string spec)
+	{
+		spec = spec.trim_whitespace();
+		int paren = spec.find("(");
+		if (spec.starts_with("random") && paren >= 0 && spec.find(")") > paren)
+		{
+			string inner = spec.substr(paren + 1, spec.find(")") - paren - 1);
+			string[] opts = inner.split(",");
+			if (opts.length() == 0) return spec;
+			return opts[int(random(0, opts.length() - 1))].trim_whitespace();
+		}
+		return spec;
+	}
+
+	int resolve_int_spec(string spec)
+	{
+		spec = spec.trim_whitespace();
+		int paren = spec.find("(");
+		if (spec.starts_with("random") && paren >= 0 && spec.find(")") > paren)
+		{
+			string inner = spec.substr(paren + 1, spec.find(")") - paren - 1);
+			string[] parts = inner.split(",");
+			if (parts.length() < 2) return 1;
+			int a = parse_int(parts[0].trim_whitespace());
+			int b = parse_int(parts[1].trim_whitespace());
+			if (a > b) { int t = a; a = b; b = t; }
+			return a + int(random(0, b - a));
+		}
+		return parse_int(spec);
+	}
+}
+
+battle_zone@[] battle_zones;
+
+void check_battle_zones(int x, int y)
+{
+	for (uint i = 0; i < battle_zones.length(); i++)
+		battle_zones[i].check(x, y);
+}
+
+void destroy_all_battle_zones()
+{
+	battle_zones.resize(0);
+}
+
+void spawn_battle_zone(int minx, int maxx, int miny, int maxy, string enemy_spec, string level_spec, string quest_id = "", int quest_increment = 0)
+{
+	battle_zones.insert_last(battle_zone(minx, maxx, miny, maxy, enemy_spec, level_spec, quest_id, quest_increment));
+}
+
+class battle_system
+{
+	battle_enemy@[] enemies;
+	int current_enemy_idx;
+	bool active;
+	sound battle_music_snd;
+	sound victory_music_snd;
+
+	void start(string enemy_id, int level, string quest_id = "", int quest_increment = 0)
+	{
+		enemy_definition@ def = find_enemy_def(enemy_id);
+		if (@def == null) return;
+
+		active = true;
+		enemies.resize(0);
+		enemies.insert_last(battle_enemy(def, level));
+		current_enemy_idx = 0;
+
+		// Pause world audio, fade out map music, play battle start
+		objpool.pause_all();
+		doorpool.pause_all();
+		pause_all_sources();
+		wt.stop();
+		music.fade_out_and_stop();
+		int start_slot = p.play_stationary("sounds\\misk\\battlestart.ogg", false);
+		while (p.sound_is_active(start_slot))
+			wait(5);
+
+		// Start battle music
+		battle_music_snd.load("sounds\\MUSIC\\battle.ogg");
+		battle_music_snd.volume = 0;
+		battle_music_snd.play_looped();
+
+		speak("A level " + string(level) + " " + def.name + " has appeared!", true);
+		wait(600);
+
+		// Silent info screen
+		run_silent_screen();
+
+		// Main battle loop
+		bool fled = false;
+		while (true)
+		{
+			if (all_dead()) break;
+
+			string result = run_player_turn();
+			if (result == "flee") { fled = true; break; }
+
+			if (all_dead()) break;
+
+			run_enemy_turns();
+			if (player.current_hp <= 0)
+			{
+				mdlg("You have been defeated. You manage to pull back before it ends you.");
+				player.current_hp = player.hp / 4;
+				if (player.current_hp < 1) player.current_hp = 1;
+				fled = true;
+				break;
+			}
+		}
+
+		if (!fled)
+			run_victory(def, level, quest_id, quest_increment);
+
+		// Fade out battle music
+		fade_out_sound(battle_music_snd);
+
+		// Restore world
+		music.sync_map_music(gm.music_path);
+		objpool.resume_all();
+		doorpool.resume_all();
+		resume_all_sources();
+		wt.start();
+		wt.update(gm, me.x, me.y);
+		active = false;
+	}
+
+	bool all_dead()
+	{
+		for (uint i = 0; i < enemies.length(); i++)
+			if (!enemies[i].dead) return false;
+		return true;
+	}
+
+	void fade_out_sound(sound@ snd)
+	{
+		if (!snd.playing) return;
+		for (int vol = int(snd.volume); vol >= -50; vol -= 2)
+		{
+			snd.volume = vol;
+			wait(25);
+		}
+		snd.stop();
+	}
+
+	void run_silent_screen()
+	{
+		speak("Press Enter to begin. L for level, N for description, S for strength, D for defense, H for HP.", true);
+		while (true)
+		{
+			wait(5);
+			if (key_pressed(KEY_RETURN)) return;
+			if (current_enemy_idx >= 0 && current_enemy_idx < int(enemies.length()))
+			{
+				battle_enemy@ e = enemies[current_enemy_idx];
+				if (key_pressed(KEY_L))
+					speak("Level " + string(e.level), true);
+				if (key_pressed(KEY_N))
+				{
+					if (e.def.noise_sound != "") p.play_stationary(e.def.noise_sound, false);
+					speak(e.def.description, true);
+				}
+				if (key_pressed(KEY_S))
+					speak("Strength " + string(e.attack), true);
+				if (key_pressed(KEY_D))
+					speak("Defense " + string(e.defense), true);
+				if (key_pressed(KEY_H))
+				{
+					int pct = e.max_hp > 0 ? (e.current_hp * 100 / e.max_hp) : 0;
+					speak(string(pct) + " percent HP", true);
+				}
+			}
+			if (int(enemies.length()) > 1)
+			{
+				if (key_pressed(KEY_UP))
+				{
+					current_enemy_idx = (current_enemy_idx - 1 + int(enemies.length())) % int(enemies.length());
+					speak(enemies[current_enemy_idx].def.name + ", level " + string(enemies[current_enemy_idx].level), true);
+				}
+				if (key_pressed(KEY_DOWN))
+				{
+					current_enemy_idx = (current_enemy_idx + 1) % int(enemies.length());
+					speak(enemies[current_enemy_idx].def.name + ", level " + string(enemies[current_enemy_idx].level), true);
+				}
+			}
+		}
+	}
+
+	string run_player_turn()
+	{
+		custom_menu battle_menu;
+		battle_menu.intro_text = "Battle.";
+		battle_menu.click_sound = "sounds\\ui\\menumove.ogg";
+		battle_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+		battle_menu.add_item("Attack", "attack");
+		battle_menu.add_item("Inventory", "inventory");
+		battle_menu.add_item("Run", "run");
+		int choice = battle_menu.run(0, true);
+		string id = choice >= 1 ? battle_menu.get_item_id(choice) : "run";
+
+		if (id == "run")
+		{
+			speak("You flee the battle.", true);
+			wait(500);
+			return "flee";
+		}
+		if (id == "inventory")
+		{
+			run_battle_inventory();
+			return "done";
+		}
+		if (id == "attack")
+		{
+			// Build skill list — battle_usable only, base_power > 0
+			custom_menu skill_menu;
+			skill_menu.intro_text = "Skills.";
+			skill_menu.click_sound = "sounds\\ui\\menumove.ogg";
+			skill_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+			bool has_skills = false;
+			for (uint i = 0; i < player.skills.length(); i++)
+			{
+				if (!player.skills[i].battle_usable) continue;
+				if (player.skills[i].base_power <= 0) continue;
+				skill_menu.add_item(player.skills[i].name, string(i), player.skills[i].description);
+				has_skills = true;
+			}
+			if (!has_skills)
+			{
+				dlg_show("You have no attack skills.");
+				return run_player_turn();
+			}
+			skill_menu.add_item("Back", "back");
+			int sc = skill_menu.run(0, true);
+			if (sc < 1 || skill_menu.get_item_id(sc) == "back")
+				return run_player_turn();
+			int skill_idx = parse_int(skill_menu.get_item_id(sc));
+			run_charge_attack(player.skills[skill_idx]);
+			return "done";
+		}
+		return "done";
+	}
+
+	void run_battle_inventory()
+	{
+		custom_menu inv_menu;
+		inv_menu.intro_text = "Items.";
+		inv_menu.click_sound = "sounds\\ui\\menumove.ogg";
+		inv_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+		bool has_items = false;
+		for (uint i = 0; i < inventory.items.length(); i++)
+		{
+			item_definition@ idef = find_item_def(inventory.items[i].id);
+			if (@idef == null) continue;
+			if (idef.hp_restore <= 0 && idef.mana_restore <= 0) continue;
+			inv_menu.add_item(inventory.entry_name(int(i)), string(i), inventory.items[i].description);
+			has_items = true;
+		}
+		if (!has_items) { dlg_show("Nothing useful in your bag right now."); return; }
+		inv_menu.add_item("Back", "back");
+		int choice = inv_menu.run(0, true);
+		if (choice < 1 || inv_menu.get_item_id(choice) == "back") return;
+		int inv_idx = parse_int(inv_menu.get_item_id(choice));
+		string result = use_item(inventory.items[inv_idx].id);
+		if (result != "") dlg_show(result);
+	}
+
+	void run_charge_attack(player_skill@ skill)
+	{
+		speak("Hold Space to charge " + skill.name + ". Use Left and Right to aim.", true);
+		wait(300);
+
+		// Wait for space
+		while (!key_down(KEY_SPACE))
+		{
+			wait(5);
+			if (key_pressed(KEY_ESCAPE)) return;
+		}
+
+		// Set up charge sound
+		sound charge_snd;
+		charge_snd.load("sounds\\player\\spellcharge.ogg");
+		charge_snd.pan = 0;
+		charge_snd.pitch = 80.0f;
+		charge_snd.play_looped();
+
+		// Set up enemy movement sound
+		battle_enemy@ target = enemies[current_enemy_idx];
+		sound move_snd;
+		if (target.def.movement_sound != "" && file_exists(target.def.movement_sound))
+		{
+			move_snd.load(target.def.movement_sound);
+			move_snd.pan = int(target.position * 100.0f);
+			move_snd.play_looped();
+		}
+
+		float player_aim = 0.0f;
+		timer charge_timer;
+		float max_charge_ms = 3000.0f;
+
+		while (key_down(KEY_SPACE))
+		{
+			wait(5);
+			float dt = 0.005f;
+
+			// Move enemy
+			target.position += target.move_speed * target.move_dir * dt;
+			if (target.position > 1.0f)  { target.position = 1.0f;  target.move_dir = -1.0f; }
+			if (target.position < -1.0f) { target.position = -1.0f; target.move_dir = 1.0f;  }
+			if (move_snd.playing)
+				move_snd.pan = int(target.position * 100.0f);
+
+			// Aim
+			if (key_down(KEY_LEFT))  player_aim -= 0.03f;
+			if (key_down(KEY_RIGHT)) player_aim += 0.03f;
+			if (player_aim < -1.0f) player_aim = -1.0f;
+			if (player_aim > 1.0f)  player_aim = 1.0f;
+
+			// Charge sound pitch and pan
+			float charge_pct = float(charge_timer.elapsed) / max_charge_ms;
+			if (charge_pct > 1.0f) charge_pct = 1.0f;
+			charge_snd.pitch = 80.0f + charge_pct * 40.0f;
+			charge_snd.pan   = int(player_aim * 100.0f);
+		}
+
+		float charge_pct = float(charge_timer.elapsed) / max_charge_ms;
+		if (charge_pct > 1.0f) charge_pct = 1.0f;
+
+		charge_snd.stop();
+		move_snd.stop();
+
+		// Spell release
+		sound release_snd;
+		release_snd.load("sounds\\player\\powerup_activate.ogg");
+		release_snd.play();
+		while (release_snd.playing) wait(5);
+
+		// Calculate outcome
+		float aim_diff = player_aim - target.position;
+		if (aim_diff < 0.0f) aim_diff = -aim_diff;
+		float accuracy = 1.0f - aim_diff;
+		if (accuracy < 0.0f) accuracy = 0.0f;
+
+		if (accuracy < 0.2f)
+		{
+			speak(skill.name + " missed!", true);
+			wait(500);
+			return;
+		}
+
+		float charge_mult = 0.5f + charge_pct * 1.5f;
+		int base_dmg = player.magic_attack + skill.base_power;
+		int dmg = int(float(base_dmg) * charge_mult * accuracy);
+		dmg -= target.defense / 2;
+		if (dmg < 1) dmg = 1;
+
+		target.current_hp -= dmg;
+		if (target.current_hp < 0) target.current_hp = 0;
+
+		// Pain sound
+		if (!target.dead && target.def.pain_sound != "" && file_exists(target.def.pain_sound))
+		{
+			sound pain_snd;
+			pain_snd.load(target.def.pain_sound);
+			pain_snd.play();
+			while (pain_snd.playing) wait(5);
+		}
+
+		speak(skill.name + ". " + target.def.name + " takes " + string(dmg) + " damage.", true);
+		wait(300);
+
+		if (target.current_hp <= 0)
+		{
+			target.dead = true;
+			if (target.def.die_sound != "" && file_exists(target.def.die_sound))
+			{
+				sound die_snd;
+				die_snd.load(target.def.die_sound);
+				die_snd.play();
+				while (die_snd.playing) wait(5);
+			}
+			speak(target.def.name + " has been defeated!", true);
+			wait(400);
+		}
+	}
+
+	void run_enemy_turns()
+	{
+		for (uint i = 0; i < enemies.length(); i++)
+		{
+			if (enemies[i].dead) continue;
+			battle_enemy@ e = enemies[i];
+
+			if (e.def.attack_sound != "" && file_exists(e.def.attack_sound))
+			{
+				sound atk_snd;
+				atk_snd.load(e.def.attack_sound);
+				atk_snd.play();
+				while (atk_snd.playing) wait(5);
+			}
+
+			int dmg = e.attack - player.defense / 2;
+			int variance = int(random(0, 4)) - 2;
+			dmg += variance;
+			if (dmg < 1) dmg = 1;
+
+			player.current_hp -= dmg;
+			if (player.current_hp < 0) player.current_hp = 0;
+
+			speak("The " + e.def.name + " used " + e.def.attack_name + ". You take " + string(dmg) + " damage. HP: " + string(player.current_hp) + " of " + string(player.hp) + ".", true);
+			wait(400);
+			if (player.current_hp <= 0) return;
+		}
+	}
+
+	void run_victory(enemy_definition@ def, int level, string quest_id = "", int quest_increment = 0)
+	{
+		// Fade out battle music, start victory music
+		fade_out_sound(battle_music_snd);
+
+		victory_music_snd.load("sounds\\MUSIC\\victory.ogg");
+		victory_music_snd.volume = 0;
+		victory_music_snd.play();
+
+		dlg_show("Victory!");
+		dlg_show("You defeated the level " + string(level) + " " + def.name + "!");
+
+		// EXP
+		int exp_gain = def.get_exp(level);
+		player.exp += exp_gain;
+		dlg_show("You gained " + string(exp_gain) + " experience points.");
+
+		// Level ups
+		while (player.exp >= player.exp_to_next_level)
+		{
+			player.exp -= player.exp_to_next_level;
+			player.level++;
+			player.strength++;
+			player.vitality++;
+			player.intelligence++;
+			player.wisdom++;
+			player.stamina++;
+			player.defense++;
+			player.speed++;
+			player.restore_to_full();
+			int lvl_slot = p.play_stationary("sounds\\Fanfare\\lvlup.ogg", false);
+			while (p.sound_is_active(lvl_slot)) wait(5);
+			dlg_show("Level up! You are now level " + string(player.level) + "!");
+		}
+
+		// Gold
+		int gold_gain = def.get_gold(level);
+		gain_gold(gold_gain, true);
+		dlg_show("You found " + string(gold_gain) + " gold.");
+
+		// Loot drops
+		for (uint i = 0; i < def.loot.length(); i++)
+		{
+			if (int(random(1, 100)) > def.loot[i].chance) continue;
+			int qty = def.loot[i].min_qty;
+			if (def.loot[i].max_qty > def.loot[i].min_qty)
+				qty += int(random(0, def.loot[i].max_qty - def.loot[i].min_qty));
+			item_definition@ idef = find_item_def(def.loot[i].item_id);
+			string iname = @idef != null ? idef.name : def.loot[i].item_id;
+			string idesc = @idef != null ? idef.description : "";
+			inventory.add_item(def.loot[i].item_id, iname, idesc, qty);
+			dlg_show("You found " + (qty > 1 ? string(qty) + "x " : "a ") + iname + "!");
+		}
+
+		// Quest progress
+		if (quest_id != "" && quest_increment > 0)
+		{
+			int qi = quests.find_quest(quest_id);
+			if (qi >= 0 && !quests.quests[qi].completed)
+			{
+				int new_progress = quests.quests[qi].percent_completed + quest_increment;
+				quests.set_progress(quest_id, new_progress);
+				if (new_progress >= 100)
+					dlg_show("That is the last of them. The storeroom is clear.");
+			}
+		}
+
+		// Wait for victory music or Enter
+		while (victory_music_snd.playing)
+		{
+			wait(5);
+			if (key_pressed(KEY_RETURN)) break;
+		}
+		fade_out_sound(victory_music_snd);
+	}
+}
+
+battle_system battle;

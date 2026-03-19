@@ -1,0 +1,79 @@
+wait 700
+text There is no arrival. Only a becoming.
+text One moment: nothing. Not dark. Not quiet. Not anything with a name or a shape. Just the gap between one life ending and whatever is supposed to come next.
+text And then something reaches into that gap and grabs.
+wait 500
+text Then: somewhere else.
+text No crossing. No door. The between-space simply stops, and this begins instead, with nothing to account for the difference.
+text A room. Tall. Strange in the careful, deliberate way that suggests it was designed by something that understood the purpose of rooms but had never needed to be inside one.
+text Screens hang without support, running figures in a notation that almost becomes language and then steps back from the edge. Vessels of something luminous sit on surfaces that bend at angles your perception cannot cleanly resolve.
+text You have no eyes.
+text This arrives not as horror but as information. No eyes. No hands. No lungs. You are here without any of the equipment usually required for being somewhere, and this is simply the case, and the case is deeply strange, and you are noting it.
+text And yet you are watching.
+text And something is watching back.
+wait 600
+text You cannot find where it comes from. It has no direction. It is the temperature of the space itself. The texture of the air. A presence that is pressed against you from every side at once, patient and close and very, very interested.
+text It gets closer.
+wait 600
+text And you stop.
+wait 900
+text And then you start again.
+text Not gently. There is nothing gentle about it. You simply reinstate, without warning and without transition, as though you had been paused mid-breath and someone had pressed the same button twice.
+text You do not know how long you were gone. The word for it was the wrong shape before you finished reaching for it.
+text The presence is still here.
+text You know it the way you know a sound that has stopped but left the room still ringing. Something warm. Something close. Something that was watching before you woke and is quietly, deeply satisfied that you did.
+text Then she is there.
+text You have nothing to see her with, and she is there anyway. A direction the warmth comes from. A shape in the attention. Something very old looking at something it has already decided to keep.
+wait 400
+text Then she speaks.
+
+text Oh! Oh oh oh!
+text The voice explodes through like a firecracker going off inside a library. Young. Bright. Absolutely delighted in a way that feels slightly dangerous.
+text There it is! There you are! I found one. I found a real one. Finally.
+text You do not have eyes yet. No body, no breath, no heartbeat. Nothing. But somehow you are entirely aware of being examined from very close range.
+text Do you know how long I have been looking? A sigh, long and theatrical, the kind of sigh that has been practiced. Dozens of souls. Hundreds. They all smelled like new furniture. Empty things wearing the right shape. Very, very disappointing.
+text But not you.
+text Her voice drops. Suddenly. Into something slower. Warmer. The difference is startling enough to feel like a different person entirely.
+text You have been somewhere before. Several somewheres. I can smell it on you, little old thing. Other lives. Other deaths. Other worlds that borrowed you for a while and then gave you back.
+text Most souls forget everything between. She sounds almost reverent. You held on.
+text Something shifts. You feel the weight of being looked at in a way that reaches all the way through whatever you currently are.
+text I am called many things, she says, and her voice has gone soft, almost maternal, almost gentle, the way something sharp can sound gentle right before it cuts. In this land they leave offerings at my name and do not speak it aloud in the open. That is appropriate. I am quite a lot to speak aloud.
+text She pauses.
+text You may call me whatever you like. I am not proud. She pauses again. I am enormously proud. But not about names.
+text Then, without any warning at all: a crash. Something in the not-space around you shatters. Cracks run through whatever passes for walls here. Something structural and important collapses with a sound like a tree falling in a language you do not speak.
+text Ah, she says, brightly, as if nothing happened and nothing is still happening. That will repair. More or less.
+text Tell me your name, little old soul. Not the last one you used. The real one. The one you carry between lives without meaning to.
+writerequired player_name What is your name?
+text <player_name>.
+text She says it like she is tasting it. Then again, softer. Then once more, barely above a whisper.
+text Yes. That is the right one. You kept that one, didn't you. Good. Good.
+text She is close again. The warmth of her is almost physical, almost too much, like standing too near a fire that is also, somehow, watching you.
+text Here is what has happened. Your last life ended, as lives tend to, without enough warning and with considerably more mess than anyone prefers. And instead of going where souls are supposed to go, you were intercepted.
+text By me.
+text She says this with exactly the cheerful ease of someone admitting they took the last biscuit. Light. Warm. Not remotely sorry.
+text I reached across a law that has held longer than your world has had weather. I folded it double. It made a sound I found very satisfying. Worth every consequence.
+text You are mine now, <player_name>. Not in the ugly way. In the important way. There is a difference and I would like you to remember it.
+text There is a world waiting for you. Old in the wrong directions. Something beneath its ordinary surface has begun to push upward, slow and patient and certain, through cracks in things that should not have cracks.
+text And I cannot go there myself. Her voice goes sharp for just a moment, bright with fury, the kind that belongs to someone who has pressed against a locked door so many times the door has bruises. The old agreements will not bend for me no matter how I fold them. I have tried. I have TRIED.
+text Then: sweetness. Instant. Total. Like a cloud passing over and then gone.
+text But you are mortal shaped. The world will open for you. And I will be with you the whole time, just beneath the surface, like a second heartbeat. Quiet. Close.
+text Now. The vessel.
+text She claps. You feel it without ears. The sound of it is enormous and happy and slightly too loud.
+text You are going to help me cheat, and it is going to be wonderful, and you are absolutely allowed to be furious with me after. I have been told I am difficult to be furious with for very long. This has not stopped people from trying, which I also enjoy.
+text Shape the vessel. Choose what kind of ruin you intend to survive as.
+text I have already cheated in your favor. Now you do the same.
+quest "crooked_promise" "A Crooked Promise" "She pressed something into you like a splinter finding exactly the right depth. You do not understand it yet, but it already belongs to you." "R3ACH TH3 H0LL0W / BR1NG TH3 W4RMTH B3L0W / UNM4K3 TH3 M0UTH TH4T IS N0T A M0UTH" "true"
+text There. A little gift. A little hook. Something that is already rooted behind your thoughts.
+text Now. Enough tenderness.
+text Time to go in the vessel, my beauty. Hehehehe!
+playwait misk\vecelplace.ogg
+text Something slams through you.
+text Pain arrives before the word for it exists. Pressure first. Then tearing. Then heat and weight and something like being written in a language your soul has never spoken and cannot refuse.
+text A spine is driven into you one grinding piece at a time. A rib cage closes around the part of you that was free. Blood pours in from somewhere above and finds its level.
+text Teeth ache into being. Eyes burn open inside a skull that was not there a moment ago.
+text You scream. It is the first thing your new lungs do, and they are very good at it.
+text She laughs. Soft and breathless, the way someone laughs when a firework goes off just close enough to feel the heat. Delighted. Present. Not remotely sorry.
+text There, she says, and her voice has gone warm and fond and tender, the way a parent sounds looking at something they made. Bones. Breath. A beating heart. More or less correct.
+text You are shaking. That is good. It means it held.
+text Now go up, little old soul. The world is waiting. And something in it already has its eyes open.
+end

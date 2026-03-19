@@ -1,0 +1,218 @@
+class shop_stock_entry
+{
+	string item_id;
+	int price;
+}
+
+class shop_npc : game_object
+{
+	string welcome_text;
+	string cancel_text;
+	string buy_text;
+	shop_stock_entry[] stock;
+
+	shop_npc(int minx, int maxx, int miny, int maxy, string sound, string welcome, string cancel_msg, string buy_msg)
+	{
+		super(minx, maxx, miny, maxy, "", sound);
+		welcome_text = welcome;
+		cancel_text = cancel_msg;
+		buy_text = buy_msg;
+	}
+
+	void add_stock(string item_id, int price)
+	{
+		shop_stock_entry e;
+		e.item_id = item_id;
+		e.price = price;
+		stock.insert_last(e);
+	}
+
+	void interact()
+	{
+		lower_world_audio_for_menu();
+		mdlg(welcome_text);
+
+		while (true)
+		{
+			custom_menu shop_menu;
+			shop_menu.intro_text = "Shop.";
+			shop_menu.click_sound = "sounds\\ui\\menumove.ogg";
+			shop_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+			shop_menu.add_item("Buy", "buy");
+			shop_menu.add_item("Sell", "sell");
+			shop_menu.add_item("Cancel", "cancel");
+
+			int choice = shop_menu.run(0, true);
+			string id = choice >= 1 ? shop_menu.get_item_id(choice) : "cancel";
+
+			if (id == "buy")
+				do_buy();
+			else if (id == "sell")
+				do_sell();
+			else
+			{
+				mdlg(cancel_text);
+				break;
+			}
+		}
+
+		resume_world_audio_after_menu();
+	}
+
+	void do_buy()
+	{
+		if (stock.length() == 0)
+		{
+			dlg_show("Nothing is available to buy.");
+			return;
+		}
+
+		while (true)
+		{
+			custom_menu buy_menu;
+			buy_menu.intro_text = "Buy.";
+			buy_menu.click_sound = "sounds\\ui\\menumove.ogg";
+			buy_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+
+			for (uint i = 0; i < stock.length(); i++)
+			{
+				item_definition@ def = find_item_def(stock[i].item_id);
+				string name = @def != null ? def.name : stock[i].item_id;
+				string desc = @def != null ? def.description : "";
+				buy_menu.add_item(name + ". " + string(stock[i].price) + " gold each", string(i), desc);
+			}
+			buy_menu.add_item("Back", "back");
+
+			int choice = buy_menu.run(0, true);
+			if (choice < 1 || buy_menu.get_item_id(choice) == "back")
+				return;
+
+			buy_item(parse_int(buy_menu.get_item_id(choice)));
+		}
+	}
+
+	void buy_item(int stock_idx)
+	{
+		if (stock_idx < 0 || stock_idx >= int(stock.length()))
+			return;
+
+		int price = stock[stock_idx].price;
+		if (player.gold < price)
+		{
+			dlg_show("You can't afford any of those.");
+			return;
+		}
+
+		int max_qty = player.gold / price;
+		if (max_qty > 99) max_qty = 99;
+
+		item_definition@ def = find_item_def(stock[stock_idx].item_id);
+		string item_name = @def != null ? def.name : stock[stock_idx].item_id;
+		string item_desc = @def != null ? def.description : "";
+
+		custom_menu qty_menu;
+		qty_menu.intro_text = "How many " + item_name + " would you like to buy?";
+		qty_menu.click_sound = "sounds\\ui\\menumove.ogg";
+		qty_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+
+		for (int q = 1; q <= max_qty; q++)
+			qty_menu.add_item(string(q) + ", " + string(q * price) + " gold", string(q));
+		qty_menu.add_item("Cancel", "cancel");
+
+		int qty_choice = qty_menu.run(0, true);
+		if (qty_choice < 1 || qty_menu.get_item_id(qty_choice) == "cancel")
+			return;
+
+		int qty = parse_int(qty_menu.get_item_id(qty_choice));
+		lose_gold(qty * price, true);
+		inventory.add_item(stock[stock_idx].item_id, item_name, item_desc, qty);
+		mdlg(buy_text);
+	}
+
+	void do_sell()
+	{
+		while (true)
+		{
+			array<int> sellable;
+			for (uint i = 0; i < inventory.items.length(); i++)
+			{
+				item_definition@ def = find_item_def(inventory.items[i].id);
+				if (@def != null && def.sellable && def.sell_price > 0)
+					sellable.insert_last(int(i));
+			}
+
+			if (sellable.length() == 0)
+			{
+				dlg_show("You have nothing to sell.");
+				return;
+			}
+
+			custom_menu sell_menu;
+			sell_menu.intro_text = "Sell.";
+			sell_menu.click_sound = "sounds\\ui\\menumove.ogg";
+			sell_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+
+			for (uint i = 0; i < sellable.length(); i++)
+			{
+				int idx = sellable[i];
+				item_definition@ def = find_item_def(inventory.items[idx].id);
+				sell_menu.add_item(inventory.entry_name(idx) + ". " + string(def.sell_price) + " gold each", string(idx), inventory.items[idx].description);
+			}
+			sell_menu.add_item("Back", "back");
+
+			int choice = sell_menu.run(0, true);
+			if (choice < 1 || sell_menu.get_item_id(choice) == "back")
+				return;
+
+			sell_item(parse_int(sell_menu.get_item_id(choice)));
+		}
+	}
+
+	void sell_item(int inv_idx)
+	{
+		if (inv_idx < 0 || inv_idx >= int(inventory.items.length()))
+			return;
+
+		item_definition@ def = find_item_def(inventory.items[inv_idx].id);
+		if (@def == null || !def.sellable || def.sell_price <= 0)
+			return;
+
+		string item_name = inventory.items[inv_idx].name;
+		int max_qty = inventory.items[inv_idx].quantity;
+
+		custom_menu qty_menu;
+		qty_menu.intro_text = "How many " + item_name + " would you like to sell?";
+		qty_menu.click_sound = "sounds\\ui\\menumove.ogg";
+		qty_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
+
+		for (int q = 1; q <= max_qty; q++)
+			qty_menu.add_item(string(q) + ", " + string(q * def.sell_price) + " gold", string(q));
+		qty_menu.add_item("Cancel", "cancel");
+
+		int qty_choice = qty_menu.run(0, true);
+		if (qty_choice < 1 || qty_menu.get_item_id(qty_choice) == "cancel")
+			return;
+
+		int qty = parse_int(qty_menu.get_item_id(qty_choice));
+		inventory.items[inv_idx].quantity -= qty;
+		if (inventory.items[inv_idx].quantity <= 0)
+			inventory.items.remove_at(inv_idx);
+		gain_gold(qty * def.sell_price, true);
+	}
+}
+
+void spawn_shop(int minx, int maxx, int miny, int maxy, string sound, string welcome, string cancel_text, string buy_text, array<string>@ parts, uint items_start)
+{
+	shop_npc@ shop = shop_npc(minx, maxx, miny, maxy, sound, welcome, cancel_text, buy_text);
+	for (uint i = items_start; i + 1 < parts.length(); i += 2)
+	{
+		string item_id = parts[i].trim_whitespace();
+		int price = parse_int(parts[i + 1].trim_whitespace());
+		if (item_id != "" && price > 0)
+			shop.add_stock(item_id, price);
+	}
+	int idx = add_collider(shop);
+	if (idx >= int(objects.length()))
+		objects.resize(idx + 1);
+	@objects[idx] = shop;
+}
