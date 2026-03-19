@@ -84,8 +84,10 @@ class locked_door : game_object
 
 		if (key_item_id != "" && inventory.find_item(key_item_id) >= 0)
 		{
+			item_definition@ key_def = find_item_def(key_item_id);
+			string key_name = @key_def != null ? key_def.name : "key";
 			custom_menu key_menu;
-			key_menu.intro_text = "You have a key. Use it?";
+			key_menu.intro_text = "You have a " + key_name + ". Use it?";
 			key_menu.click_sound = "sounds\\ui\\menumove.ogg";
 			key_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
 			key_menu.add_item("Yes", "yes");
@@ -102,7 +104,6 @@ class locked_door : game_object
 					if (inventory.items[key_idx].quantity <= 0)
 						inventory.items.remove_at(key_idx);
 				}
-				resume_world_audio_after_menu();
 				int unlock_slot = p.play_stationary("sounds\\misk\\unlock.ogg", false);
 				while (p.sound_is_active(unlock_slot))
 					wait(5);
@@ -111,6 +112,7 @@ class locked_door : game_object
 				set_flag(ukey);
 				if (tp_idx >= 0 && tp_idx < int(travelpoints.length()))
 					travelpoints[tp_idx].locked = false;
+				resume_world_audio_after_menu();
 				return;
 			}
 		}

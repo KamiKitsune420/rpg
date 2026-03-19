@@ -450,38 +450,37 @@ class battle_system
 		target.current_hp -= dmg;
 		if (target.current_hp < 0) target.current_hp = 0;
 
-		// Spell hit sound and pain sound play simultaneously
+		// Spell hit + death play simultaneously; spell hit + pain play simultaneously
 		string spell_hit = "sounds\\spells\\" + skill.name.lower().replace(" ", "") + "hit.ogg";
 		bool killed = target.current_hp <= 0;
 		sound spell_snd;
 		sound pain_snd;
+		sound die_snd;
 		if (file_exists(spell_hit))
 		{
 			spell_snd.load(spell_hit);
 			spell_snd.pan = int(target.position * 100.0f);
 			spell_snd.play();
 		}
-		if (!killed && target.def.pain_sound != "" && file_exists(target.def.pain_sound))
+		if (killed && target.def.die_sound != "" && file_exists(target.def.die_sound))
+		{
+			die_snd.load(target.def.die_sound);
+			die_snd.pan = int(target.position * 100.0f);
+			die_snd.play();
+		}
+		else if (!killed && target.def.pain_sound != "" && file_exists(target.def.pain_sound))
 		{
 			pain_snd.load(target.def.pain_sound);
 			pain_snd.pan = int(target.position * 100.0f);
 			pain_snd.play();
 		}
-		while (spell_snd.playing || pain_snd.playing) wait(5);
+		while (spell_snd.playing || pain_snd.playing || die_snd.playing) wait(5);
 
 		mdlg("You dealt " + string(dmg) + " damage to " + target.def.name + "!");
 
 		if (killed)
 		{
 			target.dead = true;
-			if (target.def.die_sound != "" && file_exists(target.def.die_sound))
-			{
-				sound die_snd;
-				die_snd.load(target.def.die_sound);
-				die_snd.pan = int(target.position * 100.0f);
-				die_snd.play();
-				while (die_snd.playing) wait(5);
-			}
 			speak(target.def.name + " has been defeated!", true);
 			wait(400);
 		}
@@ -569,10 +568,10 @@ class battle_system
 			string iname = @idef != null ? idef.name : def.loot[i].item_id;
 			string idesc = @idef != null ? idef.description : "";
 			inventory.add_item(def.loot[i].item_id, iname, idesc, qty);
-			dlg_show("You found " + (qty > 1 ? string(qty) + "x " : "a ") + iname + "!");
+			mdlg(item_pickup_message(def.loot[i].item_id, iname, qty));
 		}
 
-		// Quest progress
+		// Quest progress — silently update, no dialog here
 		if (quest_id != "" && quest_increment > 0)
 		{
 			int qi = quests.find_quest(quest_id);
@@ -580,8 +579,6 @@ class battle_system
 			{
 				int new_progress = quests.quests[qi].percent_completed + quest_increment;
 				quests.set_progress(quest_id, new_progress);
-				if (new_progress >= 100)
-					dlg_show("That is the last of them. The storeroom is clear.");
 			}
 		}
 

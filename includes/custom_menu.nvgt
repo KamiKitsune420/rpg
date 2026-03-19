@@ -69,6 +69,8 @@ class custom_menu
 	text_input search_input;
 	int extra_key = -1;
 	int extra_return_value = -3;
+	int extra_key2 = -1;
+	int extra_return_value2 = -4;
 
 	void set_volume_keys(int key1, int key2)
 	{
@@ -277,6 +279,11 @@ class custom_menu
 				voltimer.restart();
 			}
 
+			if (extra_key >= 0 && key_pressed(extra_key))
+				return extra_return_value;
+			if (extra_key2 >= 0 && key_pressed(extra_key2))
+				return extra_return_value2;
+
 			if (key_repeating(KEY_TAB))
 			{
 				if (intro_text != "") speak(intro_text + " " + get_item_description(current_item));
@@ -321,10 +328,8 @@ class custom_menu
 				if (desc.trim_whitespace() != "")
 					show_description(desc);
 			}
-			if (extra_key >= 0 && key_pressed(extra_key))
-				return extra_return_value;
 
-			else if (key_repeating(KEY_ESCAPE))
+			if (key_repeating(KEY_ESCAPE))
 			{
 				play_close_sound();
 				return -1;

@@ -124,10 +124,7 @@ class map_item : game_object
 		inventory.add_item(item_id, item_name, description, item_amount);
 		if (custom_pickup_text != "")
 			mdlg(custom_pickup_text);
-		string standard_msg = item_amount == 1
-			? player_name + " found a " + item_name + "."
-			: player_name + " found " + string(item_amount) + " " + item_name + ".";
-		mdlg(standard_msg);
+		mdlg(item_pickup_message(item_id, item_name, item_amount));
 	}
 }
 
@@ -390,10 +387,7 @@ class map_chest : game_object
 				string name = @def != null ? def.name : id;
 				string description = @def != null ? def.description : "";
 				inventory.add_item(id, name, description, amount);
-				string msg = amount == 1
-					? player_name + " found a " + name + "."
-					: player_name + " found " + string(amount) + " " + name + ".";
-				mdlg(msg);
+				mdlg(item_pickup_message(id, name, amount));
 			}
 		}
 
