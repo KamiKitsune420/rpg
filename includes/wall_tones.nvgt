@@ -98,22 +98,19 @@ class wall_tones
                     s.pan = pan;
                     s.volume = min_volume;
                     s.play_looped();
-                    s.set_fade_in_milliseconds(-1, vol, 80);
+                    s.set_fade_in_milliseconds(min_volume, vol, 80);
                 }
             }
             else
             {
                 s.pan = pan;
-                s.set_fade_in_milliseconds(-1, vol, 80);
+                s.set_fade_in_milliseconds(s.volume, vol, 80);
             }
         }
         else
         {
             if (s.playing)
-            {
-                s.set_fade_in_milliseconds(-1, min_volume - 10.0, 80);
                 s.stop();
-            }
         }
     }
 }
