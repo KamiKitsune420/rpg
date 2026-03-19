@@ -67,6 +67,8 @@ class custom_menu
 	string wrap_sound;
 	string last_search_query = "";
 	text_input search_input;
+	int extra_key = -1;
+	int extra_return_value = -3;
 
 	void set_volume_keys(int key1, int key2)
 	{
@@ -319,6 +321,9 @@ class custom_menu
 				if (desc.trim_whitespace() != "")
 					show_description(desc);
 			}
+			if (extra_key >= 0 && key_pressed(extra_key))
+				return extra_return_value;
+
 			else if (key_repeating(KEY_ESCAPE))
 			{
 				play_close_sound();

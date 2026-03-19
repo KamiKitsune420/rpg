@@ -1,0 +1,27 @@
+if quest_complete rat_problem
+  text The man gives a cautious nod from behind his crate.
+  say Wilk
+  text Told you there were too many. You did what needed doing. Now maybe I can sleep.
+  stop_scene
+end
+if quest_progress rat_problem 70
+  text The man peeks around the edge of his crate.
+  say Wilk
+  text Almost done? Almost done is still not done.
+  stop_scene
+end
+if quest_progress rat_problem 40
+  text The man looks up from his crouch.
+  say Wilk
+  text Less noise from over there. Still not going near it.
+  stop_scene
+end
+if quest_progress rat_problem 10
+  text The man gives you a look that says he's reconsidering every life choice.
+  say Wilk
+  text You're going back in? Fine. Don't say I didn't warn you.
+  stop_scene
+end
+text The man is wedged behind a crate, watching the far corner like it owes him money.
+say Wilk
+text I am not going near that corner. You did not hear that from me.

@@ -29,9 +29,9 @@ class game_object : collider
 	int sx;
 	int sy;
 
-	game_object(int min_x, int max_x, int min_y, int max_y, string text = "", string sound_file = "", string bump_sound_file = "sounds\\misk\\bump.ogg")
+	game_object(int min_x, int max_x, int min_y, int max_y, string text = "", string sound_file = "", string bump_sound_file = "sounds\\misk\\bump.ogg", string obj_name = "")
 	{
-		super(min_x, max_x, min_y, max_y, text, bump_sound_file);
+		super(min_x, max_x, min_y, max_y, text, bump_sound_file, obj_name);
 		objsound = sound_file;
 		bumpsound = bump_sound_file;
 		sx = (min_x + max_x) / 2;
@@ -222,9 +222,9 @@ class scene_npc : game_object
 {
 	string scene_file;
 
-	scene_npc(int minx, int maxx, int miny, int maxy, string snd, string scene_path)
+	scene_npc(int minx, int maxx, int miny, int maxy, string snd, string scene_path, string npc_name = "")
 	{
-		super(minx, maxx, miny, maxy, "", snd);
+		super(minx, maxx, miny, maxy, "", snd, "sounds\\misk\\bump.ogg", npc_name);
 		scene_file = scene_path;
 	}
 
@@ -236,9 +236,28 @@ class scene_npc : game_object
 	}
 }
 
-void spawn_scene_npc(int minx, int maxx, int miny, int maxy, string snd, string scene_path)
+void move_collider_by_name(string cname, int new_minx, int new_maxx, int new_miny, int new_maxy)
 {
-	scene_npc@ n = scene_npc(minx, maxx, miny, maxy, snd, scene_path);
+	for (uint i = 0; i < colliders.length(); i++)
+	{
+		if (colliders[i].name != cname) continue;
+		colliders[i].minx = new_minx;
+		colliders[i].maxx = new_maxx;
+		colliders[i].miny = new_miny;
+		colliders[i].maxy = new_maxy;
+		if (i < objects.length() && @objects[i] != null && objects[i].sound_slot >= 0)
+		{
+			int new_sx = (new_minx + new_maxx) / 2;
+			int new_sy = (new_miny + new_maxy) / 2;
+			objpool.update_sound_2d(objects[i].sound_slot, new_sx, new_sy);
+		}
+		return;
+	}
+}
+
+void spawn_scene_npc(int minx, int maxx, int miny, int maxy, string snd, string scene_path, string npc_name = "")
+{
+	scene_npc@ n = scene_npc(minx, maxx, miny, maxy, snd, scene_path, npc_name);
 	int idx = add_collider(n);
 	if (idx >= int(objects.length()))
 		objects.resize(idx + 1);

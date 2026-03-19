@@ -140,6 +140,12 @@ class battle_system
 		battle_music_snd.volume = 0;
 		battle_music_snd.play_looped();
 
+		if (def.noise_sound != "" && file_exists(def.noise_sound))
+		{
+			int noise_slot = p.play_stationary(def.noise_sound, false);
+			while (p.sound_is_active(noise_slot))
+				wait(5);
+		}
 		speak("A level " + string(level) + " " + def.name + " has appeared!", true);
 		wait(600);
 
@@ -254,7 +260,14 @@ class battle_system
 		battle_menu.add_item("Attack", "attack");
 		battle_menu.add_item("Inventory", "inventory");
 		battle_menu.add_item("Run", "run");
+		battle_menu.extra_key = KEY_H;
+		battle_menu.extra_return_value = -10;
 		int choice = battle_menu.run(0, true);
+		if (choice == -10)
+		{
+			speak("HP: " + string(player.current_hp) + " of " + string(player.hp) + ".", true);
+			return run_player_turn();
+		}
 		string id = choice >= 1 ? battle_menu.get_item_id(choice) : "run";
 
 		if (id == "run")
@@ -420,6 +433,7 @@ class battle_system
 		{
 			sound pain_snd;
 			pain_snd.load(target.def.pain_sound);
+			pain_snd.pan = int(target.position * 100.0f);
 			pain_snd.play();
 			while (pain_snd.playing) wait(5);
 		}
@@ -538,12 +552,6 @@ class battle_system
 			}
 		}
 
-		// Wait for victory music or Enter
-		while (victory_music_snd.playing)
-		{
-			wait(5);
-			if (key_pressed(KEY_RETURN)) break;
-		}
 		fade_out_sound(victory_music_snd);
 	}
 }

@@ -8,8 +8,9 @@ class collider
     int maxy;
     string interact_text;
     string bump_sound;
+    string name;
 
-    collider(int min_x, int max_x, int min_y, int max_y, string text = "", string bump_sound_path = "sounds\\misk\\bump.ogg")
+    collider(int min_x, int max_x, int min_y, int max_y, string text = "", string bump_sound_path = "sounds\\misk\\bump.ogg", string collider_name = "")
     {
         minx = min_x;
         maxx = max_x;
@@ -17,6 +18,7 @@ class collider
         maxy = max_y;
         interact_text = text;
         bump_sound = bump_sound_path;
+        name = collider_name;
     }
 
     bool contains(int x, int y)

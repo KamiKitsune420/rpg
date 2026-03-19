@@ -196,11 +196,12 @@ class game_map
 
 	void parse_npc(array<string>@ parts, int minx, int maxx, int miny, int maxy)
 	{
-		// npc:minx:maxx:miny:maxy:sound:scene_file
+		// npc:minx:maxx:miny:maxy:sound:scene_file[:name]
 		if (parts.length() < 7) return;
 		string snd = normalize_sound_path(parts[5].trim_whitespace());
 		string scene_path = parts[6].trim_whitespace();
-		spawn_scene_npc(minx, maxx, miny, maxy, snd, scene_path);
+		string npc_name = parts.length() > 7 ? parts[7].trim_whitespace() : "";
+		spawn_scene_npc(minx, maxx, miny, maxy, snd, scene_path, npc_name);
 		update_bounds(maxx, maxy);
 	}
 

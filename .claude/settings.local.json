@@ -4,7 +4,9 @@
       "Bash(python:*)",
       "Bash(ffmpeg:*)",
       "Bash(for f:*)",
-      "Bash(do out=\"$f%.ogg.wav\" ffmpeg -y -i \"$f\" \"$out\")"
+      "Bash(do out=\"$f%.ogg.wav\" ffmpeg -y -i \"$f\" \"$out\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
