@@ -75,20 +75,20 @@ string use_item(string item_id)
 	string result = "";
 	bool consumed = false;
 
+	int healed = 0;
+	int restored = 0;
+
 	if (def.hp_restore > 0)
 	{
 		int max_hp = player.hp;
 		if (player.current_hp >= max_hp)
-		{
 			result += "HP is already full.";
-		}
 		else
 		{
-			int healed = def.hp_restore;
+			healed = def.hp_restore;
 			if (player.current_hp + healed > max_hp)
 				healed = max_hp - player.current_hp;
 			player.current_hp += healed;
-			result += "Restored " + string(healed) + " HP. HP: " + string(player.current_hp) + " / " + string(max_hp) + ".";
 			consumed = true;
 		}
 	}
@@ -103,18 +103,22 @@ string use_item(string item_id)
 		}
 		else
 		{
-			int restored = def.mana_restore;
+			restored = def.mana_restore;
 			if (player.current_mana + restored > max_mana)
 				restored = max_mana - player.current_mana;
 			player.current_mana += restored;
-			if (result != "") result += " ";
-			result += "Restored " + string(restored) + " mana. Mana: " + string(player.current_mana) + " / " + string(max_mana) + ".";
 			consumed = true;
 		}
 	}
 
 	if (consumed)
 	{
+		if (healed > 0 && restored > 0)
+			result = "You consume the " + def.name + ", healing " + string(healed) + " HP and restoring " + string(restored) + " mana.";
+		else if (healed > 0)
+			result = "You gulp down the " + def.name + ", healing " + string(healed) + " HP.";
+		else if (restored > 0)
+			result = "You drink the " + def.name + ", restoring " + string(restored) + " mana.";
 		p.play_stationary("sounds\\misk\\heal.ogg", false);
 		int idx = inventory.find_item(item_id);
 		if (idx >= 0)

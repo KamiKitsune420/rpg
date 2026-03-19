@@ -17,7 +17,7 @@ if (key_pressed(KEY_LEFT) or key_pressed(KEY_RIGHT) or key_pressed(KEY_UP) or ke
 {
 speak(message);
 }
-if (key_pressed(KEY_RETURN) or key_down(KEY_A))
+if (key_pressed(KEY_RETURN) or key_pressed(KEY_SPACE) or key_down(KEY_A))
 {
 break;
 }
@@ -33,6 +33,8 @@ if (d.length()>1)
 {
 for (uint i=1; i<d.length(); i++)
 {
+if (key_down(KEY_LCONTROL) or key_down(KEY_RCONTROL))
+break;
 p.play_stationary("sounds/dlg/scroll.ogg",false);
 dlg_show(d[i]);
 }

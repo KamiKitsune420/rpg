@@ -21,7 +21,7 @@ class battle_enemy
 		defense    = def.get_defense(_level);
 		position   = 0.0f;
 		move_dir   = int(random(0, 1)) == 0 ? -1.0f : 1.0f;
-		move_speed = 0.35f + float(level) * 0.04f;
+		move_speed = 0.65f + float(level) * 0.07f;
 		dead = false;
 	}
 }
@@ -367,7 +367,7 @@ class battle_system
 
 		float player_aim = 0.0f;
 		timer charge_timer;
-		float max_charge_ms = 3000.0f;
+		float max_charge_ms = 5000.0f;
 
 		while (key_down(KEY_SPACE))
 		{
@@ -382,8 +382,8 @@ class battle_system
 				move_snd.pan = int(target.position * 100.0f);
 
 			// Aim
-			if (key_down(KEY_LEFT))  player_aim -= 0.03f;
-			if (key_down(KEY_RIGHT)) player_aim += 0.03f;
+			if (key_down(KEY_LEFT))  player_aim -= 0.01f;
+			if (key_down(KEY_RIGHT)) player_aim += 0.01f;
 			if (player_aim < -1.0f) player_aim = -1.0f;
 			if (player_aim > 1.0f)  player_aim = 1.0f;
 
@@ -428,6 +428,17 @@ class battle_system
 		target.current_hp -= dmg;
 		if (target.current_hp < 0) target.current_hp = 0;
 
+		// Spell hit sound (panned to target)
+		string spell_hit = "sounds\spells\\" + skill.name.lower().replace(" ", "") + "hit.ogg";
+		if (file_exists(spell_hit))
+		{
+			sound spell_snd;
+			spell_snd.load(spell_hit);
+			spell_snd.pan = int(target.position * 100.0f);
+			spell_snd.play();
+			while (spell_snd.playing) wait(5);
+		}
+
 		// Pain sound
 		if (!target.dead && target.def.pain_sound != "" && file_exists(target.def.pain_sound))
 		{
@@ -464,10 +475,13 @@ class battle_system
 			if (enemies[i].dead) continue;
 			battle_enemy@ e = enemies[i];
 
+			mdlg(e.def.name + " uses " + e.def.attack_name + "!");
+
 			if (e.def.attack_sound != "" && file_exists(e.def.attack_sound))
 			{
 				sound atk_snd;
 				atk_snd.load(e.def.attack_sound);
+				atk_snd.pan = int(e.position * 100.0f);
 				atk_snd.play();
 				while (atk_snd.playing) wait(5);
 			}
@@ -480,8 +494,7 @@ class battle_system
 			player.current_hp -= dmg;
 			if (player.current_hp < 0) player.current_hp = 0;
 
-			speak("The " + e.def.name + " used " + e.def.attack_name + ". You take " + string(dmg) + " damage. HP: " + string(player.current_hp) + " of " + string(player.hp) + ".", true);
-			wait(400);
+			mdlg(e.def.name + " dealt " + string(dmg) + " damage to " + player_name + ".");
 			if (player.current_hp <= 0) return;
 		}
 	}

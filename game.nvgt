@@ -385,6 +385,26 @@ void update_world()
 	if (key_pressed(KEY_T))
 		speak(format_play_time(stored_play_time_seconds + int(play_time_timer.elapsed / 1000)), true);
 
+	if (key_pressed(KEY_PAGEUP))
+	{
+		int new_vol = music.base_volume + 3;
+		if (new_vol > 0) new_vol = 0;
+		music.base_volume = new_vol;
+		if (music.current_music.active)
+			music.current_music.volume = new_vol;
+		speak("Music " + string(new_vol), true);
+	}
+
+	if (key_pressed(KEY_PAGEDOWN))
+	{
+		int new_vol = music.base_volume - 3;
+		if (new_vol < -50) new_vol = -50;
+		music.base_volume = new_vol;
+		if (music.current_music.active)
+			music.current_music.volume = new_vol;
+		speak("Music " + string(new_vol), true);
+	}
+
 	if (key_pressed(KEY_RETURN))
 		interact_last_collider(me.x, me.y);
 

@@ -58,6 +58,14 @@ class locked_door : game_object
 		locked_text = ltext;
 		key_item_id = key_id;
 		unlocked = false;
+
+		string ukey = "door_unlocked_" + current_map_path + ":" + string(minx) + ":" + string(miny);
+		if (has_flag(ukey))
+		{
+			unlocked = true;
+			if (tp_idx >= 0 && tp_idx < int(travelpoints.length()))
+				travelpoints[tp_idx].locked = false;
+		}
 	}
 
 	bool contains(int x, int y)
@@ -99,6 +107,8 @@ class locked_door : game_object
 				while (p.sound_is_active(unlock_slot))
 					wait(5);
 				unlocked = true;
+				string ukey = "door_unlocked_" + current_map_path + ":" + string(minx) + ":" + string(miny);
+				set_flag(ukey);
 				if (tp_idx >= 0 && tp_idx < int(travelpoints.length()))
 					travelpoints[tp_idx].locked = false;
 				return;
