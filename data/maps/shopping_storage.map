@@ -1,6 +1,6 @@
 music:dungen1.ogg
 zone:0:30:0:24:Shopping center warehouse
-platform:0:30:0:24:concrete:Shopping center warehouse
+platform:0:30:0:24:wood:Shopping center warehouse
 wall:0:30:24:24:wood:warehouse
 wall:0:0:0:24:wood:warehouse
 wall:30:30:0:24:wood:warehouse
