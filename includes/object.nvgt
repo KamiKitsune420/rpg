@@ -400,7 +400,7 @@ class map_chest : game_object
 		opened = true;
 		mark_item_collected(ckey);
 
-		sound_slot = objpool.play_2d("sounds\\misk\\chestopen.ogg", me.x, me.y, sx, sy, true);
+		sound_slot = objpool.play_2d("sounds\\misk\\chestempty.ogg", me.x, me.y, sx, sy, true);
 		if (sound_slot >= 0)
 			objpool.update_sound_range_2d(sound_slot, sx - minx, maxx - sx, sy - miny, maxy - sy);
 	}
