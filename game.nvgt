@@ -340,9 +340,9 @@ void notify_new_skill(player_skill@ skill)
 void grant_starting_skills(bool announce = true)
 {
 	player.skills.resize(0);
-	player.add_skill("Fireball", "The user shapes fire mana into a simple ball and propells it twards the enamy. this is the simplest form of fire manipulation", 1, true, false, 15);
+	player.add_skill("Fireball", "The user shapes fire mana into a simple ball and propells it twards the enamy. this is the simplest form of fire manipulation", 1, true, false, 5);
 	if (announce) notify_new_skill(@player.skills[player.skills.length() - 1]);
-	player.add_skill("Water Sphere", "the user compresses water mana into a Sphere then propells it twards the enamy. the longer it charges, the more dammage it does. this is the simplest form of Water manipulation.", 1, true, false, 12);
+	player.add_skill("Water Sphere", "the user compresses water mana into a Sphere then propells it twards the enamy. the longer it charges, the more dammage it does. this is the simplest form of Water manipulation.", 1, true, false, 4);
 	if (announce) notify_new_skill(@player.skills[player.skills.length() - 1]);
 	player.add_skill("Concentrate", "the user Focuses there intent. increases magic attack by one stage", 1, true, false, 0);
 	if (announce) notify_new_skill(@player.skills[player.skills.length() - 1]);

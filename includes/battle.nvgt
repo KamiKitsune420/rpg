@@ -448,6 +448,7 @@ class battle_system
 			{
 				sound die_snd;
 				die_snd.load(target.def.die_sound);
+				die_snd.pan = int(target.position * 100.0f);
 				die_snd.play();
 				while (die_snd.playing) wait(5);
 			}

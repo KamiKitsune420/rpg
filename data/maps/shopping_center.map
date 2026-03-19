@@ -16,5 +16,5 @@ shop:3:8:20:23:objects\npc.ogg:If you're after bread, candles, or gossip, I can 
 shop:18:23:20:23:objects\npc.ogg:You look steady on your feet. Good. What are you after?:Right then. Come back if you need anything.:There you go. Take care of yourself.:potion:60:mega_potion:95:mana_potion:60
 shop:32:37:20:23:objects\npc.ogg:People buy extra salt when they're afraid. Flour too. What'll it be?:Stay sharp out there.:Good. Fear's cheaper when you're prepared.:healing_herb:15:hearty_stew:30:hyper_potion:150:mega_mana_potion:110
 door:0:0:20:20:data\maps\village.map:173:20:You step back into the village square outside the shopping center.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
-npc:40:41:28:30:objects\npc.ogg:data\story\shop_owner.txt:dara
+npc:40:40:28:28:objects\npc.ogg:data\story\shop_owner.txt:dara:shop_owner_met:40:40:37:37
 door:39:41:60:60:data\maps\shopping_storage.map:15:2:You step into the back storage warehouse.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:true:The door is bolted shut. You will need a key.:storage_key
