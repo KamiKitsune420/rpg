@@ -1,0 +1,245 @@
+// Developer menu — Ctrl+F1 — only active in uncompiled builds
+
+void open_dev_menu()
+{
+	lower_world_audio_for_menu();
+	bool done = false;
+	while (!done)
+	{
+		custom_menu dm;
+		dm.intro_text = "Dev menu.";
+		dm.click_sound = "sounds\\ui\\menumove.ogg";
+		dm.enter_sound = "sounds\\ui\\menuenter.ogg";
+		dm.close_sound = "sounds\\ui\\menuclose.ogg";
+		dm.add_item("Story triggers", "story");
+		dm.add_item("Battle triggers", "battle");
+		dm.add_item("Player tweaks", "player");
+		dm.add_item("Flags", "flags");
+		dm.add_item("Close", "close");
+		int choice = dm.run(0, true);
+		if (choice < 1 || dm.get_item_id(choice) == "close")
+			done = true;
+		else if (dm.get_item_id(choice) == "story")
+			dev_story_menu();
+		else if (dm.get_item_id(choice) == "battle")
+			dev_battle_menu();
+		else if (dm.get_item_id(choice) == "player")
+			dev_player_menu();
+		else if (dm.get_item_id(choice) == "flags")
+			dev_flags_menu();
+	}
+	resume_world_audio_after_menu();
+}
+
+void dev_story_menu()
+{
+	string[] story_paths = {
+		"data\\story\\intro.txt",
+		"data\\story\\awakening.txt",
+		"data\\story\\awakening_after_stats.txt",
+		"data\\story\\village_first_look.txt",
+		"data\\story\\shop_owner.txt",
+		"data\\story\\storage_man.txt"
+	};
+	string[] story_labels = {
+		"Intro",
+		"Awakening",
+		"Awakening after stats",
+		"Village first look",
+		"Shop owner",
+		"Storage man"
+	};
+
+	custom_menu sm;
+	sm.intro_text = "Story triggers.";
+	sm.click_sound = "sounds\\ui\\menumove.ogg";
+	sm.enter_sound = "sounds\\ui\\menuenter.ogg";
+	sm.close_sound = "sounds\\ui\\menuclose.ogg";
+	for (uint i = 0; i < story_labels.length(); i++)
+		sm.add_item(story_labels[i], string(i));
+	sm.add_item("Back", "back");
+
+	while (true)
+	{
+		int choice = sm.run(0, true);
+		if (choice < 1 || sm.get_item_id(choice) == "back")
+			return;
+		int idx = parse_int(sm.get_item_id(choice));
+		if (idx >= 0 && idx < int(story_paths.length()))
+		{
+			resume_world_audio_after_menu();
+			scene.play(story_paths[idx]);
+			lower_world_audio_for_menu();
+		}
+	}
+}
+
+void dev_battle_menu()
+{
+	if (enemy_registry.length() == 0)
+	{
+		speak("No enemies registered.", true);
+		return;
+	}
+
+	custom_menu bm;
+	bm.intro_text = "Battle triggers. Pick an enemy.";
+	bm.click_sound = "sounds\\ui\\menumove.ogg";
+	bm.enter_sound = "sounds\\ui\\menuenter.ogg";
+	bm.close_sound = "sounds\\ui\\menuclose.ogg";
+	for (uint i = 0; i < enemy_registry.length(); i++)
+	{
+		enemy_definition@ def = @enemy_registry[i];
+		bm.add_item(def.name + " (HP " + string(def.base_hp) + ", ATK " + string(def.base_attack) + ", DEF " + string(def.base_defense) + ")", def.id);
+	}
+	bm.add_item("Back", "back");
+
+	while (true)
+	{
+		int choice = bm.run(0, true);
+		if (choice < 1 || bm.get_item_id(choice) == "back")
+			return;
+		string enemy_id = bm.get_item_id(choice);
+		int level = dev_pick_level();
+		if (level < 1)
+			continue;
+		resume_world_audio_after_menu();
+		battle.start(enemy_id, level);
+		lower_world_audio_for_menu();
+	}
+}
+
+int dev_pick_level()
+{
+	custom_menu lm;
+	lm.intro_text = "Pick enemy level.";
+	lm.click_sound = "sounds\\ui\\menumove.ogg";
+	lm.enter_sound = "sounds\\ui\\menuenter.ogg";
+	lm.close_sound = "sounds\\ui\\menuclose.ogg";
+	for (int i = 1; i <= 20; i++)
+		lm.add_item("Level " + string(i), string(i));
+	lm.add_item("Back", "0");
+	int choice = lm.run(0, true);
+	if (choice < 1)
+		return 0;
+	return parse_int(lm.get_item_id(choice));
+}
+
+void dev_player_menu()
+{
+	bool done = false;
+	while (!done)
+	{
+		custom_menu pm;
+		pm.intro_text = "Player tweaks.";
+		pm.click_sound = "sounds\\ui\\menumove.ogg";
+		pm.enter_sound = "sounds\\ui\\menuenter.ogg";
+		pm.close_sound = "sounds\\ui\\menuclose.ogg";
+		pm.add_item("Restore HP (" + string(player.current_hp) + " / " + string(player.hp) + ")", "hp");
+		pm.add_item("Restore Mana (" + string(player.current_mana) + " / " + string(player.mana) + ")", "mana");
+		pm.add_item("Restore HP and Mana", "restore_all");
+		pm.add_item("Add Gold (current " + string(player.gold) + ")", "gold");
+		pm.add_item("Set Level (current " + string(player.level) + ")", "level");
+		pm.add_item("Back", "back");
+		int choice = pm.run(0, true);
+		if (choice < 1 || pm.get_item_id(choice) == "back")
+		{
+			done = true;
+		}
+		else if (pm.get_item_id(choice) == "hp")
+		{
+			player.current_hp = player.hp;
+			speak("HP fully restored.", true);
+		}
+		else if (pm.get_item_id(choice) == "mana")
+		{
+			player.current_mana = player.mana;
+			speak("Mana fully restored.", true);
+		}
+		else if (pm.get_item_id(choice) == "restore_all")
+		{
+			player.restore_to_full();
+			speak("HP and mana fully restored.", true);
+		}
+		else if (pm.get_item_id(choice) == "gold")
+		{
+			text_input ti;
+			string amt_str = ti.input("Enter gold amount to add:");
+			if (!ti.cancelled && amt_str.trim_whitespace() != "")
+			{
+				int amt = parse_int(amt_str);
+				player.gold += amt;
+				speak("Gold is now " + string(player.gold) + ".", true);
+			}
+		}
+		else if (pm.get_item_id(choice) == "level")
+		{
+			text_input ti;
+			string lvl_str = ti.input("Enter new player level:");
+			if (!ti.cancelled && lvl_str.trim_whitespace() != "")
+			{
+				int lvl = parse_int(lvl_str);
+				if (lvl >= 1)
+				{
+					player.level = lvl;
+					speak("Level set to " + string(player.level) + ".", true);
+				}
+			}
+		}
+	}
+}
+
+void dev_flags_menu()
+{
+	bool done = false;
+	while (!done)
+	{
+		custom_menu fm;
+		fm.intro_text = "Flags.";
+		fm.click_sound = "sounds\\ui\\menumove.ogg";
+		fm.enter_sound = "sounds\\ui\\menuenter.ogg";
+		fm.close_sound = "sounds\\ui\\menuclose.ogg";
+		fm.add_item("Set a flag", "set");
+		fm.add_item("Clear a flag", "clear");
+		if (flag_names.length() > 0)
+		{
+			for (uint i = 0; i < flag_names.length(); i++)
+				fm.add_item(flag_names[i] + " = " + flag_values[i], "view_" + string(i));
+		}
+		else
+			fm.add_item("(no flags set)", "none");
+		fm.add_item("Back", "back");
+
+		int choice = fm.run(0, true);
+		if (choice < 1 || fm.get_item_id(choice) == "back")
+		{
+			done = true;
+		}
+		else if (fm.get_item_id(choice) == "set")
+		{
+			text_input ti;
+			string fname = ti.input("Enter flag name:");
+			if (!ti.cancelled && fname.trim_whitespace() != "")
+			{
+				text_input ti2;
+				string fval = ti2.input("Enter flag value (leave blank for 1):");
+				if (ti2.cancelled)
+					continue;
+				if (fval.trim_whitespace() == "")
+					fval = "1";
+				set_flag(fname.trim_whitespace(), fval.trim_whitespace());
+				speak("Flag " + fname.trim_whitespace() + " set to " + fval.trim_whitespace() + ".", true);
+			}
+		}
+		else if (fm.get_item_id(choice) == "clear")
+		{
+			text_input ti;
+			string fname = ti.input("Enter flag name to clear:");
+			if (!ti.cancelled && fname.trim_whitespace() != "")
+			{
+				clear_flag(fname.trim_whitespace());
+				speak("Flag cleared.", true);
+			}
+		}
+	}
+}

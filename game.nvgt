@@ -21,6 +21,7 @@
 #include "includes/enemies.nvgt"
 #include "includes/battle.nvgt"
 #include "includes/new_game.nvgt"
+#include "includes/dev_menu.nvgt"
 
 sound_pool p;
 sound_pool objpool;
@@ -360,6 +361,12 @@ void update_world()
 
 	if (key_pressed(KEY_C) && !SCRIPT_COMPILED)
 		speak(me.x + ", " + me.y + ", " + me.z);
+
+	if ((key_down(KEY_LCTRL) || key_down(KEY_RCTRL)) && key_pressed(KEY_F1) && !SCRIPT_COMPILED)
+	{
+		open_dev_menu();
+		return;
+	}
 
 	if (key_pressed(KEY_R))
 	{
