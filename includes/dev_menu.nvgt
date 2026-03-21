@@ -15,6 +15,7 @@ void open_dev_menu()
 		dm.add_item("Battle triggers", "battle");
 		dm.add_item("Player tweaks", "player");
 		dm.add_item("Flags", "flags");
+		dm.add_item("Maps", "maps");
 		dm.add_item("Close", "close");
 		int choice = dm.run(0, true);
 		if (choice < 1 || dm.get_item_id(choice) == "close")
@@ -27,6 +28,11 @@ void open_dev_menu()
 			dev_player_menu();
 		else if (dm.get_item_id(choice) == "flags")
 			dev_flags_menu();
+		else if (dm.get_item_id(choice) == "maps")
+		{
+			if (dev_map_menu())
+				done = true;
+		}
 	}
 	resume_world_audio_after_menu();
 }
@@ -242,4 +248,564 @@ void dev_flags_menu()
 			}
 		}
 	}
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Map menu
+// ─────────────────────────────────────────────────────────────────
+
+string[] dev_map_paths = {
+	"data\\maps\\house.map",
+	"data\\maps\\village.map",
+	"data\\maps\\shopping_center.map",
+	"data\\maps\\shopping_storage.map",
+	"data\\maps\\soul_lab.map",
+	"data\\maps\\mayor_house.map",
+	"data\\maps\\miller_house.map",
+	"data\\maps\\reed_house.map",
+	"data\\maps\\tanner_house.map",
+	"data\\maps\\worship_temple.map",
+	"data\\maps\\orphanage.map",
+	"data\\maps\\orphanage_hall.map",
+	"data\\maps\\orphanage_kitchen.map",
+	"data\\maps\\orphanage_quiet_room.map",
+	"data\\maps\\orphan_room1.map",
+	"data\\maps\\orphan_room2.map",
+	"data\\maps\\orphan_room3.map",
+	"data\\maps\\orphan_room5.map",
+	"data\\maps\\orphan_room7.map",
+	"data\\maps\\orphan_room8.map",
+	"data\\maps\\orphan_room10.map",
+	"data\\maps\\orphan_room11.map"
+};
+
+string[] dev_map_labels = {
+	"House",
+	"Village",
+	"Shopping Center",
+	"Shopping Storage",
+	"Soul Lab",
+	"Mayor House",
+	"Miller House",
+	"Reed House",
+	"Tanner House",
+	"Worship Temple",
+	"Orphanage",
+	"Orphanage Hall",
+	"Orphanage Kitchen",
+	"Orphanage Quiet Room",
+	"Orphan Room 1",
+	"Orphan Room 2",
+	"Orphan Room 3",
+	"Orphan Room 5",
+	"Orphan Room 7",
+	"Orphan Room 8",
+	"Orphan Room 10",
+	"Orphan Room 11"
+};
+
+// Returns true if the dev menu should close (goto teleport).
+bool dev_map_menu()
+{
+	while (true)
+	{
+		custom_menu mm;
+		mm.intro_text = "Map menu.";
+		mm.click_sound = "sounds\\ui\\menumove.ogg";
+		mm.enter_sound = "sounds\\ui\\menuenter.ogg";
+		mm.close_sound = "sounds\\ui\\menuclose.ogg";
+		mm.add_item("Go to map", "goto");
+		mm.add_item("Edit map", "edit");
+		mm.add_item("Back", "back");
+		int choice = mm.run(0, true);
+		if (choice < 1 || mm.get_item_id(choice) == "back")
+			return false;
+
+		if (mm.get_item_id(choice) == "goto")
+		{
+			string path = dev_pick_map();
+			if (path == "") continue;
+			// Load map then let open_dev_menu's cleanup call resume_world_audio_after_menu.
+			gm.load_map(path);
+			current_map_path = path;
+			me.x = 1; me.y = 1; me.z = 0;
+			current_zone = "";
+			record_map_visit(path);
+			music.sync_map_music(gm.music_path);
+			speak("Teleported to " + path + ".", true);
+			return true;
+		}
+
+		if (mm.get_item_id(choice) == "edit")
+		{
+			string path = dev_pick_map();
+			if (path == "") continue;
+			dev_teleport_silent(path);
+			dev_edit_map_menu(path);
+		}
+	}
+	return false;
+}
+
+string dev_pick_map()
+{
+	custom_menu pm;
+	pm.intro_text = "Pick a map.";
+	pm.click_sound = "sounds\\ui\\menumove.ogg";
+	pm.enter_sound = "sounds\\ui\\menuenter.ogg";
+	pm.close_sound = "sounds\\ui\\menuclose.ogg";
+	for (uint i = 0; i < dev_map_labels.length(); i++)
+		pm.add_item(dev_map_labels[i] + (current_map_path == dev_map_paths[i] ? " (current)" : ""), string(i));
+	pm.add_item("Back", "back");
+	int choice = pm.run(0, true);
+	if (choice < 1 || pm.get_item_id(choice) == "back") return "";
+	int idx = parse_int(pm.get_item_id(choice));
+	if (idx < 0 || idx >= int(dev_map_paths.length())) return "";
+	return dev_map_paths[idx];
+}
+
+// Teleport to a map while staying inside the dev menu (keeps audio lowered).
+void dev_teleport_silent(string map_path)
+{
+	// Stop music hard before loading so the new map's music can't flash at full volume.
+	music.current_music.stop();
+	gm.load_map(map_path);
+	current_map_path = map_path;
+	me.x = 1; me.y = 1; me.z = 0;
+	current_zone = "";
+	record_map_visit(map_path);
+	// pause_object_audio covers p, objpool, doorpool, all sources, and wt.
+	pause_object_audio();
+	// Sync music so current_track is set correctly for when the user exits,
+	// then immediately mute it so nothing is audible during editing.
+	music.sync_map_music(gm.music_path);
+	music.current_music.volume = -50;
+	check_zone();
+	speak("Teleported to " + map_path + ".", true);
+}
+
+// Reload the current map after an edit, staying in the lowered-audio dev state.
+void dev_reload_map_silent()
+{
+	music.current_music.stop();
+	gm.load_map(current_map_path);
+	pause_object_audio();
+	music.sync_map_music(gm.music_path);
+	music.current_music.volume = -50;
+	speak("Map reloaded.", true);
+}
+
+// ─── File helpers ─────────────────────────────────────────────────
+
+array<string> dev_read_map_lines(string path)
+{
+	array<string> lines;
+	file f;
+	if (!f.open(path, "r")) return lines;
+	while (!f.eof)
+		lines.insert_last(f.read_line().trim_whitespace());
+	f.close();
+	// Drop trailing blank lines to prevent them accumulating over edits.
+	while (lines.length() > 0 && lines[lines.length() - 1] == "")
+		lines.remove_at(lines.length() - 1);
+	return lines;
+}
+
+void dev_write_map_lines(string path, array<string>@ lines)
+{
+	file f;
+	if (!f.open(path, "w")) return;
+	for (uint i = 0; i < lines.length(); i++)
+		f.write(lines[i] + "\n");
+	f.close();
+}
+
+// ─── Prompt helpers ───────────────────────────────────────────────
+
+// Returns the entered string, or "\x01" as a cancellation sentinel.
+string dev_prompt(string prompt, string default_val = "")
+{
+	text_input ti;
+	string val = ti.input(prompt + ":", default_val);
+	if (ti.cancelled) return "\x01";
+	val = val.trim_whitespace();
+	if (val == "" && default_val != "") val = default_val;
+	return val;
+}
+
+bool dev_cancelled(string val) { return val == "\x01"; }
+
+bool dev_prompt_coords(string &out minx, string &out maxx, string &out miny, string &out maxy)
+{
+	string px = string(int(me.x));
+	string py = string(int(me.y));
+	minx = dev_prompt("Min X", px); if (dev_cancelled(minx)) return false;
+	maxx = dev_prompt("Max X", px); if (dev_cancelled(maxx)) return false;
+	miny = dev_prompt("Min Y", py); if (dev_cancelled(miny)) return false;
+	maxy = dev_prompt("Max Y", py); if (dev_cancelled(maxy)) return false;
+	return true;
+}
+
+// ─── Edit menu ────────────────────────────────────────────────────
+
+void dev_edit_map_menu(string map_path)
+{
+	while (true)
+	{
+		custom_menu em;
+		em.intro_text = "Editing " + map_path + ". Pos " + string(int(me.x)) + "," + string(int(me.y)) + ".";
+		em.click_sound = "sounds\\ui\\menumove.ogg";
+		em.enter_sound = "sounds\\ui\\menuenter.ogg";
+		em.close_sound = "sounds\\ui\\menuclose.ogg";
+		em.add_item("Add item", "add");
+		em.add_item("Remove item", "remove");
+		em.add_item("Edit item", "edit");
+		em.add_item("Back", "back");
+		int choice = em.run(0, true);
+		if (choice < 1 || em.get_item_id(choice) == "back") return;
+		if      (em.get_item_id(choice) == "add")    dev_map_add_menu(map_path);
+		else if (em.get_item_id(choice) == "remove") dev_map_remove_menu(map_path);
+		else if (em.get_item_id(choice) == "edit")   dev_map_edit_item(map_path);
+	}
+}
+
+// ─── Add item ─────────────────────────────────────────────────────
+
+void dev_map_add_menu(string map_path)
+{
+	custom_menu am;
+	am.intro_text = "Add item type.";
+	am.click_sound = "sounds\\ui\\menumove.ogg";
+	am.enter_sound = "sounds\\ui\\menuenter.ogg";
+	am.close_sound = "sounds\\ui\\menuclose.ogg";
+	am.add_item("Music",             "music");
+	am.add_item("Zone",              "zone");
+	am.add_item("Platform",          "platform");
+	am.add_item("Wall",              "wall");
+	am.add_item("Source (ambience)", "source");
+	am.add_item("Object",            "object");
+	am.add_item("Collider",          "collider");
+	am.add_item("Door",              "door");
+	am.add_item("Item",              "item");
+	am.add_item("Shop",              "shop");
+	am.add_item("NPC",               "npc");
+	am.add_item("Trigger",           "trigger");
+	am.add_item("Battle zone",       "battlezone");
+	am.add_item("Chest",             "chest");
+	am.add_item("Rat",               "rat");
+	am.add_item("Back",              "back");
+
+	while (true)
+	{
+		int choice = am.run(0, true);
+		if (choice < 1 || am.get_item_id(choice) == "back") return;
+		string new_line = dev_build_map_line(am.get_item_id(choice));
+		if (new_line == "") continue;
+		array<string> lines = dev_read_map_lines(map_path);
+		lines.insert_last(new_line);
+		dev_write_map_lines(map_path, lines);
+		dev_reload_map_silent();
+		speak("Added: " + new_line, true);
+	}
+}
+
+string dev_build_map_line(string kind)
+{
+	string minx, maxx, miny, maxy;
+
+	if (kind == "music")
+	{
+		string f = dev_prompt("Sound file", "shop1.ogg");
+		if (dev_cancelled(f) || f == "") return "";
+		return "music:" + f;
+	}
+
+	if (kind == "zone")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string name = dev_prompt("Zone name");
+		if (dev_cancelled(name) || name == "") return "";
+		return "zone:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + name;
+	}
+
+	if (kind == "platform")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string tile = dev_prompt("Tile type", "wood");
+		if (dev_cancelled(tile) || tile == "") return "";
+		string zone = dev_prompt("Zone name (blank = none)", "");
+		if (dev_cancelled(zone)) return "";
+		string prio = dev_prompt("Priority (0 = base, 1 = overlay)", "0");
+		if (dev_cancelled(prio)) return "";
+		string line = "platform:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + tile;
+		if (zone != "") line += ":" + zone;
+		if (prio != "0") line += ":" + prio;
+		return line;
+	}
+
+	if (kind == "wall")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string wtype = dev_prompt("Wall type", "building");
+		if (dev_cancelled(wtype) || wtype == "") return "";
+		string zone = dev_prompt("Zone label (blank = none)", "");
+		if (dev_cancelled(zone)) return "";
+		string line = "wall:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + wtype;
+		if (zone != "") line += ":" + zone;
+		return line;
+	}
+
+	if (kind == "source")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string snd = dev_prompt("Sound file (e.g. ambience\\village1.ogg)");
+		if (dev_cancelled(snd) || snd == "") return "";
+		return "source:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + snd;
+	}
+
+	if (kind == "object")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string text = dev_prompt("Description text");
+		if (dev_cancelled(text) || text == "") return "";
+		string snd = dev_prompt("Interact sound (blank = none)", "");
+		if (dev_cancelled(snd)) return "";
+		string bump = dev_prompt("Bump sound (blank = default)", "");
+		if (dev_cancelled(bump)) return "";
+		string line = "object:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + text;
+		if (snd != "") { line += ":" + snd; if (bump != "") line += ":" + bump; }
+		return line;
+	}
+
+	if (kind == "collider")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string text = dev_prompt("Collider label");
+		if (dev_cancelled(text) || text == "") return "";
+		return "collider:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + text;
+	}
+
+	if (kind == "door")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string destmap = dev_prompt("Destination map", "data\\maps\\village.map");
+		if (dev_cancelled(destmap) || destmap == "") return "";
+		string dx = dev_prompt("Destination X", "1");
+		if (dev_cancelled(dx)) return "";
+		string dy = dev_prompt("Destination Y", "1");
+		if (dev_cancelled(dy)) return "";
+		string text = dev_prompt("Travel text");
+		if (dev_cancelled(text) || text == "") return "";
+		string loopsnd = dev_prompt("Loop sound", "misk\\doorsnd.ogg");
+		if (dev_cancelled(loopsnd)) return "";
+		string opensnd = dev_prompt("Open sound", "misk\\dooractivate1.ogg");
+		if (dev_cancelled(opensnd)) return "";
+		string autov = dev_prompt("Auto-use (true/false)", "true");
+		if (dev_cancelled(autov)) return "";
+		string locked = dev_prompt("Locked (true/false)", "false");
+		if (dev_cancelled(locked)) return "";
+		string line = "door:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + destmap + ":" + dx + ":" + dy + ":" + text + ":" + loopsnd + ":" + opensnd + ":" + autov + ":" + locked;
+		if (locked == "true" || locked == "1")
+		{
+			string lockedtext = dev_prompt("Locked message");
+			if (dev_cancelled(lockedtext)) return "";
+			line += ":" + lockedtext;
+			string keyitem = dev_prompt("Key item ID (blank = none)", "");
+			if (!dev_cancelled(keyitem) && keyitem != "") line += ":" + keyitem;
+		}
+		return line;
+	}
+
+	if (kind == "item")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string id = dev_prompt("Item ID (e.g. potion, bread)");
+		if (dev_cancelled(id) || id == "") return "";
+		string amount = dev_prompt("Amount", "1");
+		if (dev_cancelled(amount)) return "";
+		string pickup = dev_prompt("Pickup text (blank = default)", "");
+		if (dev_cancelled(pickup)) return "";
+		string line = "item:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + id + ":" + amount;
+		if (pickup != "") line += ":" + pickup;
+		return line;
+	}
+
+	if (kind == "shop")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string snd = dev_prompt("NPC sound", "objects\\npc.ogg");
+		if (dev_cancelled(snd)) return "";
+		string welcome = dev_prompt("Welcome text");
+		if (dev_cancelled(welcome) || welcome == "") return "";
+		string cancel_text = dev_prompt("Cancel text");
+		if (dev_cancelled(cancel_text) || cancel_text == "") return "";
+		string buy_text = dev_prompt("Buy text");
+		if (dev_cancelled(buy_text) || buy_text == "") return "";
+		string line = "shop:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + snd + ":" + welcome + ":" + cancel_text + ":" + buy_text;
+		speak("Now add shop items. Enter a blank item ID when done.", true);
+		while (true)
+		{
+			string item_id = dev_prompt("Item ID (blank to finish)", "");
+			if (dev_cancelled(item_id) || item_id == "") break;
+			string price = dev_prompt("Price for " + item_id, "10");
+			if (dev_cancelled(price)) break;
+			line += ":" + item_id + ":" + price;
+		}
+		return line;
+	}
+
+	if (kind == "npc")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string snd = dev_prompt("NPC sound", "objects\\npc.ogg");
+		if (dev_cancelled(snd)) return "";
+		string scf = dev_prompt("Scene file (e.g. data\\story\\npc.txt)");
+		if (dev_cancelled(scf) || scf == "") return "";
+		string name = dev_prompt("NPC name (blank = none)", "");
+		if (dev_cancelled(name)) return "";
+		string line = "npc:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + snd + ":" + scf;
+		if (name != "")
+		{
+			line += ":" + name;
+			string mflag = dev_prompt("Moved flag (blank = none)", "");
+			if (!dev_cancelled(mflag) && mflag != "")
+			{
+				string ax  = dev_prompt("Alt Min X", minx); if (dev_cancelled(ax))  return line;
+				string ax2 = dev_prompt("Alt Max X", maxx); if (dev_cancelled(ax2)) return line;
+				string ay  = dev_prompt("Alt Min Y", miny); if (dev_cancelled(ay))  return line;
+				string ay2 = dev_prompt("Alt Max Y", maxy); if (dev_cancelled(ay2)) return line;
+				line += ":" + mflag + ":" + ax + ":" + ax2 + ":" + ay + ":" + ay2;
+			}
+		}
+		return line;
+	}
+
+	if (kind == "trigger")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string scf = dev_prompt("Scene file (e.g. data\\story\\scene.txt)");
+		if (dev_cancelled(scf) || scf == "") return "";
+		string once = dev_prompt("Fire once (true/false)", "true");
+		if (dev_cancelled(once)) return "";
+		return "trigger:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + scf + ":" + once;
+	}
+
+	if (kind == "battlezone")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string enemy = dev_prompt("Enemy spec (e.g. rat, or random(rat,ghost))");
+		if (dev_cancelled(enemy) || enemy == "") return "";
+		string level = dev_prompt("Level spec (e.g. 1, or random(1,3))");
+		if (dev_cancelled(level) || level == "") return "";
+		string qid = dev_prompt("Quest ID (blank = none)", "");
+		if (dev_cancelled(qid)) return "";
+		string line = "battlezone:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":" + enemy + ":" + level;
+		if (qid != "")
+		{
+			string qinc = dev_prompt("Quest increment", "10");
+			if (!dev_cancelled(qinc)) line += ":" + qid + ":" + qinc;
+		}
+		return line;
+	}
+
+	if (kind == "chest")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string content = "";
+		speak("Add chest items. Enter a blank item ID when done.", true);
+		while (true)
+		{
+			string item_id = dev_prompt("Item ID (blank to finish)", "");
+			if (dev_cancelled(item_id) || item_id == "") break;
+			string amount = dev_prompt("Amount for " + item_id, "1");
+			if (dev_cancelled(amount)) break;
+			if (content != "") content += ",";
+			content += item_id + ":" + amount;
+		}
+		if (content == "") return "";
+		return "chest:" + minx + ":" + maxx + ":" + miny + ":" + maxy + ":items(" + content + ")";
+	}
+
+	if (kind == "rat")
+	{
+		if (!dev_prompt_coords(minx, maxx, miny, maxy)) return "";
+		string qid = dev_prompt("Quest ID (blank = none)", "");
+		if (dev_cancelled(qid)) return "";
+		string line = "rat:" + minx + ":" + maxx + ":" + miny + ":" + maxy;
+		if (qid != "") line += ":" + qid;
+		return line;
+	}
+
+	return "";
+}
+
+// ─── Remove item ──────────────────────────────────────────────────
+
+void dev_map_remove_menu(string map_path)
+{
+	array<string> lines = dev_read_map_lines(map_path);
+	array<int> content_idx;
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string l = lines[i];
+		if (l != "" && !l.starts_with("//") && !l.starts_with("#") && !l.starts_with(";"))
+			content_idx.insert_last(int(i));
+	}
+	if (content_idx.length() == 0) { speak("No lines to remove.", true); return; }
+
+	custom_menu rm;
+	rm.intro_text = "Select line to remove.";
+	rm.click_sound = "sounds\\ui\\menumove.ogg";
+	rm.enter_sound = "sounds\\ui\\menuenter.ogg";
+	rm.close_sound = "sounds\\ui\\menuclose.ogg";
+	for (uint i = 0; i < content_idx.length(); i++)
+		rm.add_item(lines[content_idx[i]], string(content_idx[i]));
+	rm.add_item("Back", "back");
+
+	int choice = rm.run(0, true);
+	if (choice < 1 || rm.get_item_id(choice) == "back") return;
+	int idx = parse_int(rm.get_item_id(choice));
+	string removed = lines[idx];
+	lines.remove_at(idx);
+	dev_write_map_lines(map_path, lines);
+	dev_reload_map_silent();
+	speak("Removed: " + removed, true);
+}
+
+// ─── Edit item ────────────────────────────────────────────────────
+
+void dev_map_edit_item(string map_path)
+{
+	array<string> lines = dev_read_map_lines(map_path);
+	array<int> content_idx;
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string l = lines[i];
+		if (l != "" && !l.starts_with("//") && !l.starts_with("#") && !l.starts_with(";"))
+			content_idx.insert_last(int(i));
+	}
+	if (content_idx.length() == 0) { speak("No lines to edit.", true); return; }
+
+	custom_menu em;
+	em.intro_text = "Select line to edit.";
+	em.click_sound = "sounds\\ui\\menumove.ogg";
+	em.enter_sound = "sounds\\ui\\menuenter.ogg";
+	em.close_sound = "sounds\\ui\\menuclose.ogg";
+	for (uint i = 0; i < content_idx.length(); i++)
+		em.add_item(lines[content_idx[i]], string(content_idx[i]));
+	em.add_item("Back", "back");
+
+	int choice = em.run(0, true);
+	if (choice < 1 || em.get_item_id(choice) == "back") return;
+	int idx = parse_int(em.get_item_id(choice));
+	string current = lines[idx];
+
+	// Pre-fill the text input with the current line so the user can edit in place.
+	text_input ti;
+	string new_val = ti.input("Edit line:", current);
+	if (ti.cancelled || new_val.trim_whitespace() == "") return;
+	lines[idx] = new_val.trim_whitespace();
+	dev_write_map_lines(map_path, lines);
+	dev_reload_map_silent();
+	speak("Updated.", true);
 }

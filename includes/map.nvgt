@@ -29,6 +29,22 @@ class game_map
 	{
 		reset();
 
+		string packkey = pack_path(filename);
+		if (game_pack.active && game_pack.file_exists(packkey))
+		{
+			datastream@ ds = game_pack.get_file(packkey);
+			string content = ds.read();
+			array<string>@ lines = content.split("\n");
+			for (uint i = 0; i < lines.length(); i++)
+			{
+				string line = lines[i].trim_whitespace();
+				if (should_skip_line(line))
+					continue;
+				parse_line(line);
+			}
+			return true;
+		}
+
 		file f;
 		if (!f.open(filename, "r"))
 			return false;
@@ -227,7 +243,8 @@ class game_map
 		// trigger:minx:maxx:miny:maxy:scene_file[:once]
 		if (parts.length() < 6) return;
 		string scene_path = parts[5].trim_whitespace();
-		bool once = parts.length() < 7 || parse_bool(parts[6].trim_whitespace());
+		string once_str = parts.length() >= 7 ? parts[6].trim_whitespace().lower() : "";
+		bool once = once_str == "" || once_str == "once" || parse_bool(once_str);
 		spawn_trigger(minx, maxx, miny, maxy, scene_path, once);
 		update_bounds(maxx, maxy);
 	}

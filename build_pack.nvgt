@@ -1,0 +1,56 @@
+// build_pack.nvgt — packs data/ and sounds/ into game.dat
+// Run this with NVGT before distributing the game.
+// Files are stored by basename only (e.g. "menumove.ogg", "village.map").
+// The encryption key must match the one in game.nvgt.
+
+const string PACK_KEY = "change_this_key_before_release";
+
+int files_added = 0;
+int files_failed = 0;
+
+void main()
+{
+	show_window("Pack Builder");
+
+	if (file_exists("game.dat"))
+		file_delete("game.dat");
+
+	pack_file p;
+	if (!p.create("game.dat", PACK_KEY))
+	{
+		alert("Error", "Failed to create game.dat");
+		return;
+	}
+
+	add_dir(p, "data");
+	add_dir(p, "sounds");
+
+	p.close();
+
+	alert("Done", "game.dat created.\nFiles added: " + files_added + "\nFailed: " + files_failed);
+}
+
+void add_dir(pack_file@ p, string dir)
+{
+	string[]@ files = find_files(dir + "/*");
+	if (@files != null)
+	{
+		for (uint i = 0; i < files.length(); i++)
+		{
+			string disc = dir + "/" + files[i];
+			string pack_key = disc; // full relative path with forward slashes
+
+			if (p.add_file(disc, pack_key))
+				files_added++;
+			else
+				files_failed++;
+		}
+	}
+
+	string[]@ subdirs = find_directories(dir + "/*");
+	if (@subdirs != null)
+	{
+		for (uint i = 0; i < subdirs.length(); i++)
+			add_dir(p, dir + "/" + subdirs[i]);
+	}
+}

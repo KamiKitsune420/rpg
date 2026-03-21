@@ -5,3 +5,4 @@ Rpg too do list:
 4. make the village smaller, and the maps less crowded
 *done 5. add a fanfare for quest complete
 6. change how skills are made. should have a learnset and the char should start with 2 skills at lvl1, and learn from that learnset via lvlup.
+7. find a good incription method for game data and sound files

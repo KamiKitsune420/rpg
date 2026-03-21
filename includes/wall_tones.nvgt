@@ -35,10 +35,26 @@ class wall_tones
     void start()
     {
         enabled = true;
-        if (!wall_left.active) wall_left.load(left_file);
-        if (!wall_right.active) wall_right.load(right_file);
-        if (!wall_up.active) wall_up.load(up_file);
-        if (!wall_down.active) wall_down.load(down_file);
+        if (!wall_left.active)
+        {
+            if (!(game_pack.active && wall_left.load(pack_path(left_file), game_pack.opImplCast())))
+                wall_left.load(left_file);
+        }
+        if (!wall_right.active)
+        {
+            if (!(game_pack.active && wall_right.load(pack_path(right_file), game_pack.opImplCast())))
+                wall_right.load(right_file);
+        }
+        if (!wall_up.active)
+        {
+            if (!(game_pack.active && wall_up.load(pack_path(up_file), game_pack.opImplCast())))
+                wall_up.load(up_file);
+        }
+        if (!wall_down.active)
+        {
+            if (!(game_pack.active && wall_down.load(pack_path(down_file), game_pack.opImplCast())))
+                wall_down.load(down_file);
+        }
     }
 
     void stop()

@@ -93,7 +93,12 @@ class custom_menu
 	{
 		if (music.playing)
 			return;
-		if (music.load(musicpath))
+		bool m_loaded = false;
+		if (game_pack.active)
+			m_loaded = music.load(pack_path(musicpath), game_pack.opImplCast());
+		if (!m_loaded)
+			m_loaded = music.load(musicpath);
+		if (m_loaded)
 		{
 			music.set_volume(menumusvolume);
 			music_added = true;

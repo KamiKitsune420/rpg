@@ -70,17 +70,28 @@ class scene_manager
 		load_story_sound();
 		pause_world_audio();
 
-		file f;
-		if (!f.open(path, "r"))
-		{
-			resume_world_audio();
-			return false;
-		}
-
 		array<string> lines;
-		while (!f.eof)
-			lines.insert_last(f.read_line().trim_whitespace());
-		f.close();
+		string packkey = pack_path(path);
+		if (game_pack.active && game_pack.file_exists(packkey))
+		{
+			datastream@ ds = game_pack.get_file(packkey);
+			string content = ds.read();
+			array<string>@ raw = content.split("\n");
+			for (uint i = 0; i < raw.length(); i++)
+				lines.insert_last(raw[i].trim_whitespace());
+		}
+		else
+		{
+			file f;
+			if (!f.open(path, "r"))
+			{
+				resume_world_audio();
+				return false;
+			}
+			while (!f.eof)
+				lines.insert_last(f.read_line().trim_whitespace());
+			f.close();
+		}
 
 		int idx = 0;
 		while (idx < int(lines.length()))

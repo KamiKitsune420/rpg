@@ -113,7 +113,6 @@ class battle_system
 	int current_enemy_idx;
 	bool active;
 	sound battle_music_snd;
-	sound victory_music_snd;
 
 	void start(string enemy_id, int level, string quest_id = "", int quest_increment = 0)
 	{
@@ -519,12 +518,10 @@ class battle_system
 
 	void run_victory(enemy_definition@ def, int level, string quest_id = "", int quest_increment = 0)
 	{
-		// Fade out battle music, start victory music
+		// Fade out battle music, start victory music through the music system
+		// so fanfare.play() can pause it during level-up stings.
 		fade_out_sound(battle_music_snd);
-
-		victory_music_snd.load("sounds\\MUSIC\\victory.ogg");
-		victory_music_snd.volume = 0;
-		victory_music_snd.play();
+		music.play_track("sounds\\MUSIC\\victory.ogg");
 
 		dlg_show("Victory!");
 		dlg_show("You defeated the level " + string(level) + " " + def.name + "!");
@@ -547,8 +544,7 @@ class battle_system
 			player.defense++;
 			player.speed++;
 			player.restore_to_full();
-			int lvl_slot = p.play_stationary("sounds\\Fanfare\\lvlup.ogg", false);
-			while (p.sound_is_active(lvl_slot)) wait(5);
+			fanfare.play("sounds\\Fanfare\\lvlup.ogg", @music);
 			dlg_show("Level up! You are now level " + string(player.level) + "!");
 		}
 
@@ -582,7 +578,7 @@ class battle_system
 			}
 		}
 
-		fade_out_sound(victory_music_snd);
+		music.fade_out_and_stop();
 	}
 }
 

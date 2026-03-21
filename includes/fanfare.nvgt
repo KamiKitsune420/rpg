@@ -21,7 +21,7 @@ class fanfare_system
 			}
 		}
 
-		if (!cue.load(sound_path))
+		if (!load_from_pack_or_disk(@cue, sound_path))
 		{
 			if (resume_music)
 			{

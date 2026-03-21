@@ -44,7 +44,7 @@ p.play_stationary("sounds/dlg/close.ogg",false);
 void dlgplay(string dlgsound, bool enableenter=true, bool fade=false, int fadetime=40)
 {
 sound dlgaudio;
-dlgaudio.load(dlgsound);
+load_from_pack_or_disk(@dlgaudio, dlgsound);
 dlgaudio.play();
 while(dlgaudio.playing)
 {

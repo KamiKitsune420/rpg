@@ -93,7 +93,17 @@ class music_system
 		if (normalized == "")
 			return true;
 
-		if (!current_music.load(normalized))
+		bool music_loaded = false;
+		if (game_pack.active)
+		{
+			string pk = pack_path(normalized);
+			music_loaded = current_music.load(pk, game_pack.opImplCast());
+			if (!music_loaded && !SCRIPT_COMPILED)
+				speak("Pack missing: " + pk, false);
+		}
+		if (!music_loaded)
+			music_loaded = current_music.load(normalized);
+		if (!music_loaded)
 			return false;
 
 		current_music.volume = base_volume;

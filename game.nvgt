@@ -22,6 +22,27 @@
 #include "includes/battle.nvgt"
 #include "includes/new_game.nvgt"
 #include "includes/dev_menu.nvgt"
+#include "includes/settings.nvgt"
+
+pack_file game_pack;
+
+string pack_path(string path)
+{
+	return path.replace("\\", "/", true);
+}
+
+bool load_from_pack_or_disk(sound@ snd, string path)
+{
+	if (game_pack.active)
+	{
+		string pk = pack_path(path);
+		if (snd.load(pk, game_pack.opImplCast()))
+			return true;
+		if (!SCRIPT_COMPILED)
+			speak("Pack missing: " + pk, false);
+	}
+	return snd.load(path);
+}
 
 sound_pool p;
 sound_pool objpool;
@@ -400,6 +421,7 @@ void update_world()
 		if (music.current_music.active)
 			music.current_music.volume = new_vol;
 		speak("Music " + string(new_vol), true);
+		save_settings();
 	}
 
 	if (key_pressed(KEY_PAGEDOWN))
@@ -410,6 +432,25 @@ void update_world()
 		if (music.current_music.active)
 			music.current_music.volume = new_vol;
 		speak("Music " + string(new_vol), true);
+		save_settings();
+	}
+
+	if ((key_down(KEY_LCTRL) || key_down(KEY_RCTRL)) && key_pressed(KEY_HOME))
+	{
+		float new_vol = sound_master_volume + 2.0;
+		if (new_vol > 0.0) new_vol = 0.0;
+		sound_master_volume = new_vol;
+		speak("Master volume " + string(int(new_vol)), true);
+		save_settings();
+	}
+
+	if ((key_down(KEY_LCTRL) || key_down(KEY_RCTRL)) && key_pressed(KEY_END))
+	{
+		float new_vol = sound_master_volume - 2.0;
+		if (new_vol < -50.0) new_vol = -50.0;
+		sound_master_volume = new_vol;
+		speak("Master volume " + string(int(new_vol)), true);
+		save_settings();
 	}
 
 	if (key_pressed(KEY_RETURN) || key_pressed(KEY_SPACE))
@@ -554,10 +595,17 @@ void setup_systems()
 	object_interact_counts.resize(0);
 	register_items();
 	register_enemies();
+	load_settings();
+	@on_custom_menu_volume_changed = on_settings_volume_changed;
 }
 
 void run_game()
 {
+	if (file_exists("game.dat"))
+	{
+		game_pack.open("game.dat", "change_this_key_before_release");
+	}
+
 	setup_systems();
 
 	while (game_running)

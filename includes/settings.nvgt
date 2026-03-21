@@ -1,0 +1,61 @@
+savedata game_settings("settings.dat");
+
+void save_settings()
+{
+	game_settings.add("menu_music_volume", menumusvolume);
+	game_settings.add("world_music_volume", string(music.base_volume));
+	game_settings.add("master_volume", int(sound_master_volume));
+	game_settings.add("tts_config", tts_dump_config(tts, true));
+	game_settings.save();
+}
+
+void load_settings()
+{
+	if (!file_exists("settings.dat"))
+		return;
+	game_settings.load();
+	menumusvolume = game_settings.read_int("menu_music_volume");
+	string wvol_s = game_settings.read_string("world_music_volume");
+	if (wvol_s != "")
+		music.base_volume = parse_int(wvol_s);
+	float master = float(game_settings.read_int("master_volume"));
+	sound_master_volume = master;
+	string tts_cfg = game_settings.read_string("tts_config");
+	if (tts_cfg != "")
+		tts_load_config(tts_cfg, tts);
+}
+
+void on_settings_volume_changed(int volume)
+{
+	save_settings();
+}
+
+void show_options_menu()
+{
+	while (true)
+	{
+		custom_menu opts;
+		opts.intro_text = "Options.";
+		opts.click_sound = "sounds\\ui\\menumove.ogg";
+		opts.enter_sound = "sounds\\ui\\menuenter.ogg";
+		opts.add_item("Text to speech configuration", "tts_config");
+		opts.add_item("Switch speech method. Current: " + (use_sr ? "Screen reader" : "SAPI"), "switch_speech");
+		opts.add_item("Back", "back");
+
+		int choice = opts.run(0, true);
+		if (choice < 1 || opts.get_item_id(choice) == "back")
+			return;
+		string id = opts.get_item_id(choice);
+		if (id == "tts_config")
+		{
+			tts_config(tts, false);
+			save_settings();
+		}
+		else if (id == "switch_speech")
+		{
+			use_sr = !use_sr;
+			speak((use_sr ? "Screen reader" : "SAPI") + " selected.", false);
+			save_settings();
+		}
+	}
+}
