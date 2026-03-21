@@ -173,6 +173,12 @@ class game_map
 			parse_battlezone(parts, minx, maxx, miny, maxy);
 			return;
 		}
+
+		if (kind == "chest")
+		{
+			parse_chest(parts, minx, maxx, miny, maxy);
+			return;
+		}
 	}
 
 	void parse_item(array<string>@ parts, int minx, int maxx, int miny, int maxy)
@@ -235,6 +241,52 @@ class game_map
 		string quest_id = parts.length() > 7 ? parts[7].trim_whitespace() : "";
 		int quest_increment = parts.length() > 8 ? parse_int(parts[8].trim_whitespace()) : 0;
 		spawn_battle_zone(minx, maxx, miny, maxy, enemy_spec, level_spec, quest_id, quest_increment);
+		update_bounds(maxx, maxy);
+	}
+
+	void parse_chest(array<string>@ parts, int minx, int maxx, int miny, int maxy)
+	{
+		// chest:minx:maxx:miny:maxy:items(id1,id1amount,id2,id2amount,...)
+		// Rejoin from parts[5] onward to handle any colons inside the items(...) block
+		if (parts.length() < 6) return;
+		string spec = parts[5].trim_whitespace();
+		for (uint i = 6; i < parts.length(); i++)
+			spec += ":" + parts[i].trim_whitespace();
+
+		int paren_start = spec.find("(");
+		int paren_end = spec.find_last(")");
+		if (paren_start < 0 || paren_end <= paren_start) return;
+
+		string content = spec.substr(paren_start + 1, paren_end - paren_start - 1);
+		array<string>@ entries = content.split(",");
+
+		string[] ids;
+		int[] amounts;
+
+		for (uint i = 0; i < entries.length(); i++)
+		{
+			string entry = entries[i].trim_whitespace();
+			if (entry == "") continue;
+			// Support id:amount or just id (amount defaults to 1)
+			int colon = entry.find(":");
+			string id;
+			int amount = 1;
+			if (colon >= 0)
+			{
+				id = entry.substr(0, colon).trim_whitespace();
+				amount = parse_int(entry.substr(colon + 1).trim_whitespace());
+				if (amount < 1) amount = 1;
+			}
+			else
+			{
+				id = entry;
+			}
+			if (id == "") continue;
+			ids.insert_last(id);
+			amounts.insert_last(amount);
+		}
+
+		spawn_chest(minx, maxx, miny, maxy, ids, amounts);
 		update_bounds(maxx, maxy);
 	}
 

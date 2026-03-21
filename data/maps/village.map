@@ -16,10 +16,10 @@ object:10:14:94:98:A waist-high stone brazier burns in front of the temple steps
 object:38:40:18:20:A painted wooden sign reads Yuri Orphanage. Someone has tied a faded ribbon around one corner.:objects\paper.ogg
 object:164:168:18:20:A broad sign over the front reads Yuri Shopping Center in cheerful letters that have survived better years.:objects\paper.ogg
 object:184:188:104:108:A pair of village supply crates sit beside the eastern gate, half unpacked and left in a hurry.:objects\table.ogg
-object:42:42:76:76:"If you're looking for the temple, keep following the north road till the air starts smelling like incense.":objects\npc.ogg
-object:126:126:72:72:"The shopping center's all the way down in the southeast now. Nobody can say it's crowded anymore.":objects\npc.ogg
-object:156:156:76:76:"The mayor likes his distance. Can't say the rest of us mind.":objects\npc.ogg
-object:178:178:100:100:"Gate's shut. Captain says nobody leaves till we know what the divine wants. I didn't ask what a divine is, and neither should you.":objects\npc.ogg
+npc:42:42:76:76:objects\npc.ogg:"If you're looking for the temple, keep following the north road till the air starts smelling like incense."
+npc:126:126:72:72:objects\npc.ogg:"The shopping center's all the way down in the southeast now. Nobody can say it's crowded anymore."
+npc:156:156:76:76:objects\npc.ogg:"The mayor likes his distance. Can't say the rest of us mind."
+npc:178:178:100:100:objects\npc.ogg:"Gate's shut. Captain says nobody leaves till we know what the divine wants. I didn't ask what a divine is, and neither should you."
 object:84:88:70:72:A weathered bench sits near the road, polished smooth by years of village gossip.:objects\bench.ogg
 object:134:136:72:74:A battered trashcan rattles in the breeze with every loose scrap inside.:objects\trashcan.ogg
 source:0:206:0:134:ambience\village1.ogg

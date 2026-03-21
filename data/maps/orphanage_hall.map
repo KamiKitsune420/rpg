@@ -6,7 +6,7 @@ wall:0:0:0:80:wood:hall
 wall:20:20:0:80:wood:hall
 wall:0:20:0:0:wood:hall
 object:8:12:52:54:A narrow table holds spare candles, a handbell, and a list of chores rewritten too many times.:objects\table.ogg
-object:6:10:30:32:"Matron says the hall echoes because it listens. I think she just wants us not to run in it.":objects\npc.ogg
+npc:6:6:30:30:objects\npc.ogg:"Matron says the hall echoes because it listens. I think she just wants us not to run in it."
 door:10:10:0:0:data\maps\orphanage.map:2:39:You step back into the common room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
 door:0:0:12:12:data\maps\orphan_room1.map:7:1:You slip into the first orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false
 door:20:20:12:12:data\maps\orphan_room2.map:7:1:You slip into the second orphan room.:misk\doorsnd.ogg:misk\dooractivate1.ogg:true:false

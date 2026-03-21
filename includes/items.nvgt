@@ -75,20 +75,20 @@ string use_item(string item_id)
 	string result = "";
 	bool consumed = false;
 
+	int healed = 0;
+	int restored = 0;
+
 	if (def.hp_restore > 0)
 	{
 		int max_hp = player.hp;
 		if (player.current_hp >= max_hp)
-		{
 			result += "HP is already full.";
-		}
 		else
 		{
-			int healed = def.hp_restore;
+			healed = def.hp_restore;
 			if (player.current_hp + healed > max_hp)
 				healed = max_hp - player.current_hp;
 			player.current_hp += healed;
-			result += "Restored " + string(healed) + " HP. HP: " + string(player.current_hp) + " / " + string(max_hp) + ".";
 			consumed = true;
 		}
 	}
@@ -103,18 +103,22 @@ string use_item(string item_id)
 		}
 		else
 		{
-			int restored = def.mana_restore;
+			restored = def.mana_restore;
 			if (player.current_mana + restored > max_mana)
 				restored = max_mana - player.current_mana;
 			player.current_mana += restored;
-			if (result != "") result += " ";
-			result += "Restored " + string(restored) + " mana. Mana: " + string(player.current_mana) + " / " + string(max_mana) + ".";
 			consumed = true;
 		}
 	}
 
 	if (consumed)
 	{
+		if (healed > 0 && restored > 0)
+			result = "You consume the " + def.name + ", healing " + string(healed) + " HP and restoring " + string(restored) + " mana.";
+		else if (healed > 0)
+			result = "You gulp down the " + def.name + ", healing " + string(healed) + " HP.";
+		else if (restored > 0)
+			result = "You drink the " + def.name + ", restoring " + string(restored) + " mana.";
 		p.play_stationary("sounds\\misk\\heal.ogg", false);
 		int idx = inventory.find_item(item_id);
 		if (idx >= 0)
@@ -126,6 +130,42 @@ string use_item(string item_id)
 	}
 
 	return result;
+}
+
+int item_compartment_index(string item_id)
+{
+	item_definition@ def = find_item_def(item_id);
+	if (@def == null) return 0;
+	if (def.hp_restore > 0 || def.mana_restore > 0) return 1; // Medicine
+	if (!def.usable_outside_battle) return 3; // Special
+	return 0; // Items
+}
+
+string item_compartment_name(string item_id)
+{
+	int idx = item_compartment_index(item_id);
+	if (idx == 1) return "Medicine";
+	if (idx == 2) return "Equipment";
+	if (idx == 3) return "Special";
+	return "Items";
+}
+
+string item_pickup_message(string item_id, string item_name, int amount)
+{
+	string comp = item_compartment_name(item_id);
+	string found;
+	string stored;
+	if (amount == 1)
+	{
+		found  = player_name + " found a " + item_name + ".";
+		stored = player_name + " stored the " + item_name + " in the " + comp + " compartment.";
+	}
+	else
+	{
+		found  = player_name + " found " + string(amount) + " " + item_name + ".";
+		stored = player_name + " stored them in the " + comp + " compartment.";
+	}
+	return found + "\r\n" + stored;
 }
 
 int play_gold_sound(int amount)

@@ -137,6 +137,7 @@ void setup_journey_menu()
 	journey_menu.add_item("Quests");
 	journey_menu.add_item("Save");
 	journey_menu.add_item("Exit");
+	journey_menu.add_item("Cancel");
 }
 
 string run_main_menu()
@@ -246,32 +247,87 @@ void show_status_menu()
 	}
 }
 
+// Returns 1-based index of chosen option, or -1 if cancelled
+int question_menu(string menutext, string[] options)
+{
+	custom_menu qmenu;
+	qmenu.intro_text = menutext;
+	qmenu.click_sound = "sounds\\ui\\menumove.ogg";
+	qmenu.enter_sound = "sounds\\ui\\menuenter.ogg";
+	qmenu.open_sound = "sounds\\ui\\question.ogg";
+	for (uint i = 0; i < options.length(); i++)
+		qmenu.add_item(options[i], string(i + 1));
+	return qmenu.run(0, true);
+}
+
+string[] inv_compartment_names = {"Items", "Medicine", "Equipment", "Special"};
+int[] inv_compartment_positions = {0, 0, 0, 0};
+
+int get_item_compartment(string item_id)
+{
+	return item_compartment_index(item_id);
+}
+
 void show_inventory_menu()
 {
+	int current_compartment = 0;
+
 	while (true)
 	{
-		if (inventory.items.length() == 0)
+		// Gather indices for this compartment
+		int[] compartment_items;
+		for (uint i = 0; i < inventory.items.length(); i++)
 		{
-			dlg_show("Your inventory is empty.");
-			return;
+			if (get_item_compartment(inventory.items[i].id) == current_compartment)
+				compartment_items.insert_last(int(i));
 		}
 
 		custom_menu inventory_menu;
-		inventory_menu.intro_text = "Inventory.";
+		inventory_menu.intro_text = inv_compartment_names[current_compartment] + ".";
 		inventory_menu.click_sound = "sounds\\ui\\menumove.ogg";
 		inventory_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
-		for (uint i = 0; i < inventory.items.length(); i++)
-			inventory_menu.add_item(inventory.entry_name(i), inventory.items[i].id, inventory.items[i].description);
+		inventory_menu.enable_left_and_right = false;
+		inventory_menu.extra_key = KEY_LEFT;
+		inventory_menu.extra_return_value = -20;
+		inventory_menu.extra_key2 = KEY_RIGHT;
+		inventory_menu.extra_return_value2 = -21;
+
+		for (uint i = 0; i < compartment_items.length(); i++)
+		{
+			int idx = compartment_items[i];
+			inventory_menu.add_item(inventory.entry_name(idx), inventory.items[idx].id, inventory.items[idx].description);
+		}
 		inventory_menu.add_item("Back", "back");
 
-		int choice = inventory_menu.run(0, true);
+		int start = inv_compartment_positions[current_compartment];
+		if (start >= int(inventory_menu.items.length())) start = 0;
+
+		int choice = inventory_menu.run(start, true);
+
+		// Save position before switching
+		inv_compartment_positions[current_compartment] = inventory_menu.current_item;
+
+		if (choice == -20)
+		{
+			current_compartment = (current_compartment - 1 + 4) % 4;
+			p.play_stationary("sounds\\ui\\invswich.ogg", false);
+			speak(inv_compartment_names[current_compartment], true);
+			continue;
+		}
+		if (choice == -21)
+		{
+			current_compartment = (current_compartment + 1) % 4;
+			p.play_stationary("sounds\\ui\\invswich.ogg", false);
+			speak(inv_compartment_names[current_compartment], true);
+			continue;
+		}
+
 		if (choice < 1 || inventory_menu.get_item_id(choice) == "back")
 			return;
 
 		string item_id = inventory_menu.get_item_id(choice);
 		int item_idx = inventory.find_item(item_id);
-		if (item_idx < 0)
-			continue;
+		if (item_idx < 0) continue;
 		string item_name = inventory.items[item_idx].name;
 
 		item_definition@ def = find_item_def(item_id);
@@ -374,7 +430,7 @@ void open_journey_menu()
 			}
 		}
 		else
-			break;
+			break; // Cancel (6) or Escape (-1)
 	}
 
 	resume_world_audio_after_menu();

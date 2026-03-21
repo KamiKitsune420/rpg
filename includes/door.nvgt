@@ -39,8 +39,7 @@ opentype=osound;
 automatic=acl;
 locked=ldk;
 lockedtext=ltext;
-float door_pitch = 85.0 + float((int(minx) * 7 + int(miny) * 13) % 30);
-travsound = doorpool.play_extended_2d(resolve_door_sound_path(looptype), me.x, me.y, minx, miny, 0.0, 0, 0, 0, 0, true, 0.0, 0.0, 0.0, door_pitch);
+travsound = doorpool.play_extended_2d(resolve_door_sound_path(looptype), me.x, me.y, minx, miny, 0.0, 0, 0, 0, 0, true, 0.0, 0.0, 0.0, 100.0);
 doorpool.update_sound_range_2d(travsound, 0, maxx-minx, 0, maxy-miny);
 }
 }
@@ -59,6 +58,14 @@ class locked_door : game_object
 		locked_text = ltext;
 		key_item_id = key_id;
 		unlocked = false;
+
+		string ukey = "door_unlocked_" + current_map_path + ":" + string(minx) + ":" + string(miny);
+		if (has_flag(ukey))
+		{
+			unlocked = true;
+			if (tp_idx >= 0 && tp_idx < int(travelpoints.length()))
+				travelpoints[tp_idx].locked = false;
+		}
 	}
 
 	bool contains(int x, int y)
@@ -77,8 +84,10 @@ class locked_door : game_object
 
 		if (key_item_id != "" && inventory.find_item(key_item_id) >= 0)
 		{
+			item_definition@ key_def = find_item_def(key_item_id);
+			string key_name = @key_def != null ? key_def.name : "key";
 			custom_menu key_menu;
-			key_menu.intro_text = "You have a key. Use it?";
+			key_menu.intro_text = "You have a " + key_name + ". Use it?";
 			key_menu.click_sound = "sounds\\ui\\menumove.ogg";
 			key_menu.enter_sound = "sounds\\ui\\menuenter.ogg";
 			key_menu.add_item("Yes", "yes");
@@ -95,13 +104,15 @@ class locked_door : game_object
 					if (inventory.items[key_idx].quantity <= 0)
 						inventory.items.remove_at(key_idx);
 				}
-				resume_world_audio_after_menu();
 				int unlock_slot = p.play_stationary("sounds\\misk\\unlock.ogg", false);
 				while (p.sound_is_active(unlock_slot))
 					wait(5);
 				unlocked = true;
+				string ukey = "door_unlocked_" + current_map_path + ":" + string(minx) + ":" + string(miny);
+				set_flag(ukey);
 				if (tp_idx >= 0 && tp_idx < int(travelpoints.length()))
 					travelpoints[tp_idx].locked = false;
+				resume_world_audio_after_menu();
 				return;
 			}
 		}

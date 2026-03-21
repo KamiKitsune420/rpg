@@ -21,7 +21,7 @@ class battle_enemy
 		defense    = def.get_defense(_level);
 		position   = 0.0f;
 		move_dir   = int(random(0, 1)) == 0 ? -1.0f : 1.0f;
-		move_speed = 0.35f + float(level) * 0.04f;
+		move_speed = 0.65f + float(level) * 0.07f;
 		dead = false;
 	}
 }
@@ -137,7 +137,7 @@ class battle_system
 
 		// Start battle music
 		battle_music_snd.load("sounds\\MUSIC\\battle.ogg");
-		battle_music_snd.volume = 0;
+		battle_music_snd.volume = music.base_volume;
 		battle_music_snd.play_looped();
 
 		if (def.noise_sound != "" && file_exists(def.noise_sound))
@@ -367,7 +367,7 @@ class battle_system
 
 		float player_aim = 0.0f;
 		timer charge_timer;
-		float max_charge_ms = 3000.0f;
+		float max_charge_ms = 5000.0f;
 
 		while (key_down(KEY_SPACE))
 		{
@@ -382,8 +382,8 @@ class battle_system
 				move_snd.pan = int(target.position * 100.0f);
 
 			// Aim
-			if (key_down(KEY_LEFT))  player_aim -= 0.03f;
-			if (key_down(KEY_RIGHT)) player_aim += 0.03f;
+			if (key_down(KEY_LEFT))  player_aim -= 0.01f;
+			if (key_down(KEY_RIGHT)) player_aim += 0.01f;
 			if (player_aim < -1.0f) player_aim = -1.0f;
 			if (player_aim > 1.0f)  player_aim = 1.0f;
 
@@ -400,11 +400,33 @@ class battle_system
 		charge_snd.stop();
 		move_snd.stop();
 
-		// Spell release
-		sound release_snd;
-		release_snd.load("sounds\\player\\powerup_activate.ogg");
-		release_snd.play();
-		while (release_snd.playing) wait(5);
+		// Spell cast sound — pans from center toward target as it travels
+		string spell_cast = "sounds\\spells\\" + skill.name.lower().replace(" ", "") + ".ogg";
+		if (file_exists(spell_cast))
+		{
+			sound cast_snd;
+			cast_snd.load(spell_cast);
+			cast_snd.pan = 0;
+			cast_snd.play();
+			float cast_start = 0.0f;
+			float cast_end = target.position;
+			timer cast_timer;
+			while (cast_snd.playing)
+			{
+				float cast_dur = cast_snd.length > 0 ? float(cast_snd.length) : 500.0f;
+				float t = float(cast_timer.elapsed) / cast_dur;
+				if (t > 1.0f) t = 1.0f;
+				cast_snd.pan = int((cast_start + (cast_end - cast_start) * t) * 100.0f);
+				wait(5);
+			}
+		}
+		else
+		{
+			sound release_snd;
+			release_snd.load("sounds\\player\\powerup_activate.ogg");
+			release_snd.play();
+			while (release_snd.playing) wait(5);
+		}
 
 		// Calculate outcome
 		float aim_diff = player_aim - target.position;
@@ -428,30 +450,37 @@ class battle_system
 		target.current_hp -= dmg;
 		if (target.current_hp < 0) target.current_hp = 0;
 
-		// Pain sound
-		if (!target.dead && target.def.pain_sound != "" && file_exists(target.def.pain_sound))
+		// Spell hit + death play simultaneously; spell hit + pain play simultaneously
+		string spell_hit = "sounds\\spells\\" + skill.name.lower().replace(" ", "") + "hit.ogg";
+		bool killed = target.current_hp <= 0;
+		sound spell_snd;
+		sound pain_snd;
+		sound die_snd;
+		if (file_exists(spell_hit))
 		{
-			sound pain_snd;
+			spell_snd.load(spell_hit);
+			spell_snd.pan = int(target.position * 100.0f);
+			spell_snd.play();
+		}
+		if (killed && target.def.die_sound != "" && file_exists(target.def.die_sound))
+		{
+			die_snd.load(target.def.die_sound);
+			die_snd.pan = int(target.position * 100.0f);
+			die_snd.play();
+		}
+		else if (!killed && target.def.pain_sound != "" && file_exists(target.def.pain_sound))
+		{
 			pain_snd.load(target.def.pain_sound);
 			pain_snd.pan = int(target.position * 100.0f);
 			pain_snd.play();
-			while (pain_snd.playing) wait(5);
 		}
+		while (spell_snd.playing || pain_snd.playing || die_snd.playing) wait(5);
 
-		speak(skill.name + ". " + target.def.name + " takes " + string(dmg) + " damage.", true);
-		wait(300);
+		mdlg("You dealt " + string(dmg) + " damage to " + target.def.name + "!");
 
-		if (target.current_hp <= 0)
+		if (killed)
 		{
 			target.dead = true;
-			if (target.def.die_sound != "" && file_exists(target.def.die_sound))
-			{
-				sound die_snd;
-				die_snd.load(target.def.die_sound);
-				die_snd.pan = int(target.position * 100.0f);
-				die_snd.play();
-				while (die_snd.playing) wait(5);
-			}
 			speak(target.def.name + " has been defeated!", true);
 			wait(400);
 		}
@@ -464,10 +493,13 @@ class battle_system
 			if (enemies[i].dead) continue;
 			battle_enemy@ e = enemies[i];
 
+			mdlg(e.def.name + " uses " + e.def.attack_name + "!");
+
 			if (e.def.attack_sound != "" && file_exists(e.def.attack_sound))
 			{
 				sound atk_snd;
 				atk_snd.load(e.def.attack_sound);
+				atk_snd.pan = int(e.position * 100.0f);
 				atk_snd.play();
 				while (atk_snd.playing) wait(5);
 			}
@@ -480,8 +512,7 @@ class battle_system
 			player.current_hp -= dmg;
 			if (player.current_hp < 0) player.current_hp = 0;
 
-			speak("The " + e.def.name + " used " + e.def.attack_name + ". You take " + string(dmg) + " damage. HP: " + string(player.current_hp) + " of " + string(player.hp) + ".", true);
-			wait(400);
+			mdlg(e.def.name + " dealt " + string(dmg) + " damage to " + player_name + ".");
 			if (player.current_hp <= 0) return;
 		}
 	}
@@ -537,10 +568,10 @@ class battle_system
 			string iname = @idef != null ? idef.name : def.loot[i].item_id;
 			string idesc = @idef != null ? idef.description : "";
 			inventory.add_item(def.loot[i].item_id, iname, idesc, qty);
-			dlg_show("You found " + (qty > 1 ? string(qty) + "x " : "a ") + iname + "!");
+			mdlg(item_pickup_message(def.loot[i].item_id, iname, qty));
 		}
 
-		// Quest progress
+		// Quest progress — silently update, no dialog here
 		if (quest_id != "" && quest_increment > 0)
 		{
 			int qi = quests.find_quest(quest_id);
@@ -548,8 +579,6 @@ class battle_system
 			{
 				int new_progress = quests.quests[qi].percent_completed + quest_increment;
 				quests.set_progress(quest_id, new_progress);
-				if (new_progress >= 100)
-					dlg_show("That is the last of them. The storeroom is clear.");
 			}
 		}
 

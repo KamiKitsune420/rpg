@@ -6,7 +6,13 @@
       "Bash(for f:*)",
       "Bash(do out=\"$f%.ogg.wav\" ffmpeg -y -i \"$f\" \"$out\")",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(grep -E \"\\\\.\\(js|wav|mp3|ogg\\)$\")",
+      "Bash(grep:*)",
+      "Bash(cd:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(node -e \":*)",
+      "Bash(git push:*)"
     ]
   }
 }

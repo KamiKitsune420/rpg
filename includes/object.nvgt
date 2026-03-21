@@ -124,10 +124,7 @@ class map_item : game_object
 		inventory.add_item(item_id, item_name, description, item_amount);
 		if (custom_pickup_text != "")
 			mdlg(custom_pickup_text);
-		string standard_msg = item_amount == 1
-			? player_name + " found a " + item_name + "."
-			: player_name + " found " + string(item_amount) + " " + item_name + ".";
-		mdlg(standard_msg);
+		mdlg(item_pickup_message(item_id, item_name, item_amount));
 	}
 }
 
@@ -232,7 +229,19 @@ class scene_npc : game_object
 	{
 		string ikey = current_map_path + ":" + string(minx) + ":" + string(miny);
 		record_object_interaction(ikey);
-		scene.play(scene_file);
+		if (scene_file.starts_with("\""))
+		{
+			string text = scene_file.substr(1);
+			if (text.ends_with("\""))
+				text = text.substr(0, text.length() - 1);
+			pause_object_audio();
+			mdlg(text.replace("|", "\r\n", true));
+			resume_object_audio();
+		}
+		else
+		{
+			scene.play(scene_file);
+		}
 	}
 }
 
@@ -316,6 +325,88 @@ void destroy_all_triggers()
 void spawn_trigger(int minx, int maxx, int miny, int maxy, string scene_path, bool once = true)
 {
 	triggers.insert_last(map_trigger(minx, maxx, miny, maxy, scene_path, once));
+}
+
+class map_chest : game_object
+{
+	string[] item_ids;
+	int[] item_amounts;
+	bool opened;
+
+	map_chest(int minx, int maxx, int miny, int maxy, string[]@ ids, int[]@ amounts)
+	{
+		super(minx, maxx, miny, maxy, "", "");
+		item_ids = ids;
+		item_amounts = amounts;
+		opened = false;
+
+		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		if (is_item_collected(ckey))
+			opened = true;
+
+		string loop_sound = opened ? "sounds\\misk\\chestopen.ogg" : "sounds\\misk\\chest.ogg";
+		sound_slot = objpool.play_2d(loop_sound, me.x, me.y, sx, sy, true);
+		if (sound_slot >= 0)
+			objpool.update_sound_range_2d(sound_slot, sx - minx, maxx - sx, sy - miny, maxy - sy);
+	}
+
+	void interact()
+	{
+		string ckey = current_map_path + ":" + string(minx) + ":" + string(miny);
+		if (opened)
+		{
+			mdlg("The chest is open and empty.");
+			return;
+		}
+
+		if (sound_slot >= 0)
+		{
+			objpool.destroy_sound(sound_slot);
+			sound_slot = -1;
+		}
+
+		int open_slot = p.play_stationary("sounds\\misk\\chestopen.ogg", false);
+		while (p.sound_is_active(open_slot))
+			wait(5);
+
+		for (uint i = 0; i < item_ids.length(); i++)
+		{
+			string id = item_ids[i];
+			int amount = item_amounts[i];
+			if (id == "gold")
+			{
+				gain_gold(amount, true);
+				mdlg(player_name + " found " + string(amount) + " gold.");
+			}
+			else
+			{
+				int iget_slot = p.play_stationary("sounds\\misk\\itemget.ogg", false);
+				while (p.sound_is_active(iget_slot))
+					wait(5);
+				item_definition@ def = find_item_def(id);
+				string name = @def != null ? def.name : id;
+				string description = @def != null ? def.description : "";
+				inventory.add_item(id, name, description, amount);
+				mdlg(item_pickup_message(id, name, amount));
+			}
+		}
+
+		opened = true;
+		mark_item_collected(ckey);
+
+		sound_slot = objpool.play_2d("sounds\\misk\\chestempty.ogg", me.x, me.y, sx, sy, true);
+		if (sound_slot >= 0)
+			objpool.update_sound_range_2d(sound_slot, sx - minx, maxx - sx, sy - miny, maxy - sy);
+	}
+}
+
+void spawn_chest(int minx, int maxx, int miny, int maxy, string[]@ ids, int[]@ amounts)
+{
+	map_chest@ c = map_chest(minx, maxx, miny, maxy, ids, amounts);
+	int idx = add_collider(c);
+	if (idx >= int(objects.length()))
+		objects.resize(idx + 1);
+	@objects[idx] = c;
 }
 
 void destroy_all_objects()

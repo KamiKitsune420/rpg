@@ -72,8 +72,15 @@ class quest_log
 			percent = 0;
 		if (percent > 100)
 			percent = 100;
+		bool just_completed = percent >= 100 && !quests[idx].completed;
 		quests[idx].percent_completed = percent;
 		quests[idx].completed = percent >= 100;
+		if (just_completed)
+		{
+			fanfare.play("sounds\\Fanfare\\questcomplete.ogg", @music);
+			dlg_show("Quest complete!");
+			dlg_show(quests[idx].name + " is complete.");
+		}
 		return true;
 	}
 
