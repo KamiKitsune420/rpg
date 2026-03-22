@@ -36,14 +36,6 @@ void quick_fade_world_audio()
 
 void lower_world_audio_for_menu()
 {
-	// Quick fade before pausing so world sounds don't cut abruptly
-	for (int i = 0; i < 4; i++)
-	{
-		fade_pool_quick(p);
-		fade_pool_quick(objpool);
-		fade_pool_quick(doorpool);
-		wait(10);
-	}
 	p.pause_all();
 	objpool.pause_all();
 	doorpool.pause_all();
@@ -87,11 +79,6 @@ void resume_world_audio_after_menu()
 	objpool.resume_all();
 	doorpool.resume_all();
 	resume_all_sources();
-	// Recalculate 2D volumes after the fade that happened on entry —
-	// without this, sounds resume at the faded-down volume.
-	p.update_listener_2d(me.x, me.y);
-	objpool.update_listener_2d(me.x, me.y);
-	doorpool.update_listener_2d(me.x, me.y);
 	wt.start();
 	wt.update(gm, me.x, me.y);
 	if (music.current_music.active)
