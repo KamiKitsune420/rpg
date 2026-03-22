@@ -1,3 +1,4 @@
+#include "includes/gameserver.nvgt"
 #include "includes/sound_pool.nvgt"
 #include "includes/speech.nvgt"
 #include "includes/music_system.nvgt"

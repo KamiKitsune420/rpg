@@ -1,0 +1,355 @@
+// gameserver.nvgt — client for the RPG game server HTTP API
+// Handles auth (HMAC-SHA256 + JWT), version check, activation,
+// validation, MOTD, gifts, and scores.
+
+// --- configuration ---
+const string GS_GAME_ID    = "rpg";          // must match name registered on server
+const string GS_API_SECRET = "";             // fill in after registering the game
+const string GS_BASE_URL   = "http://127.0.0.1:3000"; // change to VPS URL in production
+
+// --- internal state ---
+string gs_token        = "";
+int64  gs_token_expiry = 0; // unix timestamp (seconds) when token expires
+
+// -------------------------------------------------------------------------
+// HMAC-SHA256 implemented in AngelScript (RFC 2104)
+// Uses NVGT's built-in string_hash_sha256(data, binary).
+// Note: str[i] returns a single-char string in NVGT, so we use
+// character_to_ascii() to get the byte value for XOR operations.
+// -------------------------------------------------------------------------
+string hmac_sha256_hex(string key, string message)
+{
+	const uint BLOCK = 64; // SHA-256 block size in bytes
+
+	// If key is longer than block size, hash it down to 32 bytes
+	if (key.length() > BLOCK)
+		key = string_hash_sha256(key, true);
+
+	// Pad key with zero bytes to block size
+	while (key.length() < BLOCK)
+		key += ascii_to_character(0);
+
+	// XOR key with ipad (0x36) and opad (0x5C)
+	string ipad_key = "";
+	string opad_key = "";
+	for (uint i = 0; i < BLOCK; i++)
+	{
+		uint8 b = character_to_ascii(key[i]);
+		ipad_key += ascii_to_character(b ^ 0x36);
+		opad_key += ascii_to_character(b ^ 0x5C);
+	}
+
+	// inner = SHA256(ipad_key || message)  — binary output
+	string inner = string_hash_sha256(ipad_key + message, true);
+
+	// outer = SHA256(opad_key || inner)    — hex output
+	return string_hash_sha256(opad_key + inner, false);
+}
+
+// -------------------------------------------------------------------------
+// Low-level helpers
+// -------------------------------------------------------------------------
+
+// Build a minimal JSON object from key/value pairs.
+// Values that start with a digit, '-', 't', 'f', or '[' are emitted raw
+// (numbers, booleans, arrays); everything else is quoted as a string.
+string gs_json(string[]@ keys, string[]@ values)
+{
+	string buf = "{";
+	for (uint i = 0; i < keys.length(); i++)
+	{
+		if (i > 0) buf += ",";
+		buf += "\"" + keys[i] + "\":";
+		string v = values[i];
+		if (v.length() > 0)
+		{
+			uint8 first = character_to_ascii(v[0]);
+			// raw if: digit (48-57), minus (45), true (116), false (102), array (91)
+			if ((first >= 48 && first <= 57) || first == 45 || first == 116 || first == 102 || first == 91)
+				buf += v;
+			else
+				buf += "\"" + v + "\"";
+		}
+		else
+			buf += "\"\"";
+	}
+	buf += "}";
+	return buf;
+}
+
+// Extract a string value from a flat JSON response by key name.
+// Only handles simple "key":"value" and "key":number patterns.
+// Not a full JSON parser — sufficient for the server's flat responses.
+string gs_json_get(string json, string key)
+{
+	string search = "\"" + key + "\":";
+	int pos = json.find(search);
+	if (pos < 0) return "";
+	pos += search.length();
+	if (pos >= int(json.length())) return "";
+
+	// Skip whitespace
+	while (pos < int(json.length()) && json[pos] == " ") pos++;
+
+	if (json[pos] == "\"") // opening quote → string value
+	{
+		pos++; // skip the opening quote
+		string result = "";
+		while (pos < int(json.length()) && json[pos] != "\"")
+		{
+			result += json[pos];
+			pos++;
+		}
+		return result;
+	}
+	else // number / bool / null — read until delimiter
+	{
+		string result = "";
+		while (pos < int(json.length()))
+		{
+			uint8 c = character_to_ascii(json[pos]);
+			if (c == 44 || c == 125 || c == 93) break; // , } ]
+			result += json[pos];
+			pos++;
+		}
+		return result.trim_whitespace_right();
+	}
+}
+
+bool gs_json_bool(string json, string key)
+{
+	return gs_json_get(json, key) == "true";
+}
+
+int gs_json_int(string json, string key)
+{
+	string v = gs_json_get(json, key);
+	if (v == "") return 0;
+	return parse_int(v);
+}
+
+// -------------------------------------------------------------------------
+// Unix timestamp helper
+// NVGT's timestamp type stores microseconds since the Unix epoch.
+// Divide by 1,000,000 to get seconds.
+// -------------------------------------------------------------------------
+int64 gs_unix_now()
+{
+	timestamp ts;
+	return int64(ts) / 1000000;
+}
+
+// -------------------------------------------------------------------------
+// Authentication
+// -------------------------------------------------------------------------
+
+// Returns true if we have a valid token (with a 60 s buffer before expiry).
+bool gs_has_token()
+{
+	return gs_token != "" && gs_unix_now() < gs_token_expiry - 60;
+}
+
+// Authenticate with the server and store the JWT.
+// Returns true on success.
+bool gs_authenticate()
+{
+	if (GS_API_SECRET == "")
+		return false; // no secret configured
+
+	int64 ts = gs_unix_now();
+	string msg = GS_GAME_ID + ":" + ts;
+	string sig = hmac_sha256_hex(GS_API_SECRET, msg);
+
+	string[]@ ks = {"game_id", "timestamp", "signature"};
+	string[]@ vs = {GS_GAME_ID, "" + ts, sig};
+	string body = gs_json(ks, vs);
+
+	http_response resp;
+	string result = url_post(GS_BASE_URL + "/api/v1/auth", body, resp);
+	if (resp.status != 200) return false;
+
+	gs_token = gs_json_get(result, "token");
+	if (gs_token == "") return false;
+
+	gs_token_expiry = ts + 3600; // JWT is valid 1 hour
+	return true;
+}
+
+// Ensure we have a valid token, re-authenticating if needed.
+bool gs_ensure_auth()
+{
+	if (gs_has_token()) return true;
+	return gs_authenticate();
+}
+
+// -------------------------------------------------------------------------
+// Authenticated HTTP helpers using the http class + name_value_collection
+// -------------------------------------------------------------------------
+
+string gs_get(string path, int&out status_out)
+{
+	status_out = 0;
+	if (!gs_ensure_auth()) return "";
+
+	name_value_collection headers;
+	headers.set("Authorization", "Bearer " + gs_token);
+
+	spec::uri url(GS_BASE_URL + path);
+	http h;
+	h.max_retries = 0;
+	h.get(url, headers);
+	h.wait();
+
+	status_out = h.status_code;
+	return h.response_body;
+}
+
+string gs_post(string path, string json_body, int&out status_out)
+{
+	status_out = 0;
+	if (!gs_ensure_auth()) return "";
+
+	name_value_collection headers;
+	headers.set("Authorization", "Bearer " + gs_token);
+	headers.set("Content-Type", "application/json");
+
+	spec::uri url(GS_BASE_URL + path);
+	http h;
+	h.max_retries = 0;
+	h.post(url, json_body, headers);
+	h.wait();
+
+	status_out = h.status_code;
+	return h.response_body;
+}
+
+// -------------------------------------------------------------------------
+// Version check
+// -------------------------------------------------------------------------
+
+// Returns true if a newer version than current_version is available.
+bool gs_check_version(string current_version, string&out out_version, string&out out_download_url, string&out out_notes)
+{
+	int status;
+	string result = gs_get("/api/v1/" + GS_GAME_ID + "/version", status);
+	if (status != 200) return false;
+
+	out_version      = gs_json_get(result, "version");
+	out_download_url = gs_json_get(result, "download_url");
+	out_notes        = gs_json_get(result, "release_notes");
+
+	return out_version != current_version && out_version != "";
+}
+
+// -------------------------------------------------------------------------
+// License key activation / validation
+// -------------------------------------------------------------------------
+
+// Activate a license key for this machine.
+// Returns true on success (including "already activated").
+bool gs_activate_key(string key, string&out out_message)
+{
+	string machine_id = generate_system_fingerprint(GS_GAME_ID);
+
+	string[]@ ks = {"key", "machine_id"};
+	string[]@ vs = {key, machine_id};
+	string body = gs_json(ks, vs);
+
+	int status;
+	string result = gs_post("/api/v1/" + GS_GAME_ID + "/activate", body, status);
+	out_message = gs_json_get(result, "message");
+	if (out_message == "") out_message = gs_json_get(result, "error");
+	return status == 200 && gs_json_bool(result, "success");
+}
+
+// Check whether this machine has a valid activated key.
+bool gs_validate_key(string key, bool&out out_activated)
+{
+	string machine_id = generate_system_fingerprint(GS_GAME_ID);
+
+	string[]@ ks = {"key", "machine_id"};
+	string[]@ vs = {key, machine_id};
+	string body = gs_json(ks, vs);
+
+	int status;
+	string result = gs_post("/api/v1/" + GS_GAME_ID + "/validate", body, status);
+	if (status != 200) return false;
+
+	out_activated = gs_json_bool(result, "activated");
+	return gs_json_bool(result, "valid");
+}
+
+// -------------------------------------------------------------------------
+// Message of the Day
+// -------------------------------------------------------------------------
+
+// Returns false if no MOTD is set.
+// out_type will be "text" or "audio". out_audio_url is set for audio MOTDs.
+bool gs_get_motd(string&out out_content, string&out out_type, string&out out_audio_url)
+{
+	int status;
+	string result = gs_get("/api/v1/" + GS_GAME_ID + "/getmotd", status);
+	if (status != 200) return false;
+
+	out_type      = gs_json_get(result, "type");
+	out_content   = gs_json_get(result, "content");
+	out_audio_url = gs_json_get(result, "audio_url");
+	return out_content != "";
+}
+
+// -------------------------------------------------------------------------
+// Gifts
+// -------------------------------------------------------------------------
+
+// Claim a gift code for this machine.
+// Returns true on success. out_reward is the raw JSON reward object string.
+bool gs_claim_gift(string code, string&out out_reward, string&out out_error)
+{
+	string machine_id = generate_system_fingerprint(GS_GAME_ID);
+
+	string[]@ ks = {"code", "machine_id"};
+	string[]@ vs = {code, machine_id};
+	string body = gs_json(ks, vs);
+
+	int status;
+	string result = gs_post("/api/v1/" + GS_GAME_ID + "/claim_gift", body, status);
+
+	out_error  = gs_json_get(result, "error");
+	out_reward = gs_json_get(result, "reward");
+	return status == 200 && gs_json_bool(result, "success");
+}
+
+// -------------------------------------------------------------------------
+// Scores / leaderboard
+// -------------------------------------------------------------------------
+
+// Submit a score for this machine. out_rank is the player's new rank.
+bool gs_submit_score(string player_name, double score, int&out out_rank)
+{
+	string machine_id = generate_system_fingerprint(GS_GAME_ID);
+
+	string[]@ ks = {"player_name", "score", "machine_id"};
+	string[]@ vs = {player_name, "" + score, machine_id};
+	string body = gs_json(ks, vs);
+
+	int status;
+	string result = gs_post("/api/v1/" + GS_GAME_ID + "/scores", body, status);
+	out_rank = gs_json_int(result, "rank");
+	return status == 200 && gs_json_bool(result, "success");
+}
+
+// Get this machine's current rank and score.
+// Returns false if no score is on record.
+bool gs_get_my_rank(string&out out_name, double&out out_score, int&out out_rank, int&out out_total)
+{
+	string machine_id = generate_system_fingerprint(GS_GAME_ID);
+	int status;
+	string result = gs_get("/api/v1/" + GS_GAME_ID + "/scores/rank?machine_id=" + url_encode(machine_id, ""), status);
+	if (status != 200) return false;
+
+	out_name  = gs_json_get(result, "player_name");
+	out_score = parse_float(gs_json_get(result, "score"));
+	out_rank  = gs_json_int(result, "rank");
+	out_total = gs_json_int(result, "total");
+	return true;
+}
