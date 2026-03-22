@@ -7,3 +7,16 @@ Rpg too do list:
 6. change how skills are made. should have a learnset and the char should start with 2 skills at lvl1, and learn from that learnset via  level up.
 *done 7. find a good incription method for game data and sound files
 8. Create a centralized server used for checking for updates, getting online promotional gifts, so on and so forth.
+9. Parse menus with text files to make stories more customisable, for instance, loading menus mid story.
+***start example:
+    text Dara nods when she sees you. "Hey, player_name. Looking for a water bottle? say less. I've got you!"
+call menu secret_shop
+if item_has water_bottle 1
+text Hey, you got it! nice! Allow me to give you a reward as well, have these stat points.
+assign points 10
+call menu statscreen
+text hey! player_name! you look awesomely strong, I am very proud. Now go!
+else if item_has water_bottle 0
+text Not buying a water bottle? I guess nothing for you then. Have a good day.
+end
+**end example.
