@@ -609,6 +609,9 @@ void run_game()
 
 	setup_systems();
 
+	if (check_updates_on_startup)
+		check_for_updates();
+
 	while (game_running)
 	{
 		string menu_choice = run_main_menu();

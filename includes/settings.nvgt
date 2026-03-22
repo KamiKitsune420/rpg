@@ -1,4 +1,8 @@
+const string GAME_VERSION = "1.0.0";
+
 savedata game_settings("settings.dat");
+
+bool check_updates_on_startup = true;
 
 void save_settings()
 {
@@ -6,6 +10,7 @@ void save_settings()
 	game_settings.add("world_music_volume", string(music.base_volume));
 	game_settings.add("master_volume", int(sound_master_volume));
 	game_settings.add("tts_config", tts_dump_config(tts, true));
+	game_settings.add("check_updates_on_startup", check_updates_on_startup ? 1 : 0);
 	game_settings.save();
 }
 
@@ -23,11 +28,37 @@ void load_settings()
 	string tts_cfg = game_settings.read_string("tts_config");
 	if (tts_cfg != "")
 		tts_load_config(tts_cfg, tts);
+	string cup = game_settings.read_string("check_updates_on_startup");
+	if (cup != "")
+		check_updates_on_startup = cup != "0";
 }
 
 void on_settings_volume_changed(int volume)
 {
 	save_settings();
+}
+
+void check_for_updates()
+{
+	if (GS_API_SECRET == "")
+		return; // server not configured
+	speak("Checking for updates...", true);
+	string new_version, download_url, notes;
+	bool update_available = gs_check_version(GAME_VERSION, new_version, download_url, notes);
+	if (!update_available)
+	{
+		if (new_version == "")
+			dlg_show("Could not reach the update server. Please try again later.");
+		else
+			dlg_show("You are up to date. Current version: " + GAME_VERSION + ".");
+		return;
+	}
+	string msg = "Version " + new_version + " is available (you have " + GAME_VERSION + ").";
+	if (notes != "")
+		msg += " Release notes: " + notes;
+	if (download_url != "")
+		msg += " Download at: " + download_url;
+	dlg_show(msg);
 }
 
 void show_options_menu()
@@ -40,6 +71,8 @@ void show_options_menu()
 		opts.enter_sound = "sounds\\ui\\menuenter.ogg";
 		opts.add_item("Text to speech configuration", "tts_config");
 		opts.add_item("Switch speech method. Current: " + (use_sr ? "Screen reader" : "SAPI"), "switch_speech");
+		opts.add_item("Check for updates", "check_updates");
+		opts.add_item("Check for updates on startup. Currently: " + (check_updates_on_startup ? "enabled" : "disabled"), "toggle_startup_updates");
 		opts.add_item("Back", "back");
 
 		int choice = opts.run(0, true);
@@ -55,6 +88,16 @@ void show_options_menu()
 		{
 			use_sr = !use_sr;
 			speak((use_sr ? "Screen reader" : "SAPI") + " selected.", false);
+			save_settings();
+		}
+		else if (id == "check_updates")
+		{
+			check_for_updates();
+		}
+		else if (id == "toggle_startup_updates")
+		{
+			check_updates_on_startup = !check_updates_on_startup;
+			speak("Check for updates on startup " + (check_updates_on_startup ? "enabled" : "disabled") + ".", false);
 			save_settings();
 		}
 	}
