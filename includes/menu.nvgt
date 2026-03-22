@@ -36,13 +36,49 @@ void quick_fade_world_audio()
 
 void lower_world_audio_for_menu()
 {
+	// Quick fade before pausing so world sounds don't cut abruptly
+	for (int i = 0; i < 4; i++)
+	{
+		fade_pool_quick(p);
+		fade_pool_quick(objpool);
+		fade_pool_quick(doorpool);
+		wait(10);
+	}
 	p.pause_all();
 	objpool.pause_all();
 	doorpool.pause_all();
 	pause_all_sources();
 	wt.stop();
+	// Duck music relative to base_volume so it never raises above it,
+	// and calling this multiple times is idempotent.
 	if (music.current_music.active)
-		music.current_music.volume = -18;
+	{
+		int duck_vol = music.base_volume - 12;
+		if (duck_vol < -50) duck_vol = -50;
+		music.current_music.volume = duck_vol;
+	}
+}
+
+// Fades all world audio out simultaneously, then tears everything down.
+// Use this when leaving the world entirely (Escape or journey-menu exit).
+void fade_world_audio_out()
+{
+	for (int i = 0; i < 5; i++)
+	{
+		fade_pool_quick(p, 10);
+		fade_pool_quick(objpool, 10);
+		fade_pool_quick(doorpool, 10);
+		if (music.current_music.active && music.current_music.playing && music.current_music.volume > -50)
+			music.current_music.volume -= 10;
+		wait(8);
+	}
+	destroy_all_sources();
+	p.destroy_all();
+	objpool.destroy_all();
+	doorpool.destroy_all();
+	wt.stop();
+	music.current_music.stop();
+	music.current_track = "";
 }
 
 void resume_world_audio_after_menu()
@@ -433,10 +469,7 @@ void open_journey_menu()
 			int answer = confirm.run(0, true);
 			if (answer == 1)
 			{
-				fade_multi_pool(1);
-				music.fade_out_and_stop();
-				pause_all_sources();
-				wt.stop();
+				fade_world_audio_out();
 				in_world = false;
 				speak("Returned to main menu.");
 				return;

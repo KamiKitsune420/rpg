@@ -71,8 +71,8 @@ class wall_tones
         if (!enabled || @map == null)
             return;
 
-        update_dir(wall_left, map, x, y, -1, 0, left_file, -100.0);
-        update_dir(wall_right, map, x, y, 1, 0, right_file, 100.0);
+        update_dir(wall_left, map, x, y, -1, 0, left_file, -65.0);
+        update_dir(wall_right, map, x, y, 1, 0, right_file, 65.0);
         update_dir(wall_up, map, x, y, 0, 1, up_file, 0.0);
         update_dir(wall_down, map, x, y, 0, -1, down_file, 0.0);
     }

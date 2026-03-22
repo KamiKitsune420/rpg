@@ -64,7 +64,7 @@ class custom_menu
 	string enter_sound;
 	string edge_sound;
 	string open_sound;
-	string wrap_sound;
+	string wrap_sound = "sounds\\ui\\menuwrap.ogg";
 	string last_search_query = "";
 	text_input search_input;
 	int extra_key = -1;

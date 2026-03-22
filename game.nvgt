@@ -647,10 +647,7 @@ void run_game()
 
 			if (key_pressed(KEY_ESCAPE))
 			{
-				fade_multi_pool(1);
-				music.fade_out_and_stop();
-				pause_all_sources();
-				wt.stop();
+				fade_world_audio_out();
 				in_world = false;
 				speak("Returned to main menu.");
 			}
