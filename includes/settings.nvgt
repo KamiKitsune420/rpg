@@ -66,13 +66,13 @@ void show_options_menu()
 	while (true)
 	{
 		custom_menu opts;
-		opts.intro_text = "Options.";
+		opts.intro_text = "Options menu. select an option to Modify.";
 		opts.click_sound = "sounds\\ui\\menumove.ogg";
 		opts.enter_sound = "sounds\\ui\\menuenter.ogg";
 		opts.add_item("Text to speech configuration", "tts_config");
-		opts.add_item("Switch speech method. Current: " + (use_sr ? "Screen reader" : "SAPI"), "switch_speech");
+		opts.add_item("Speech method. Current: " + (use_sr ? "Screen reader" : "SAPI"), "switch_speech");
 		opts.add_item("Check for updates", "check_updates");
-		opts.add_item("Check for updates on startup. Currently: " + (check_updates_on_startup ? "enabled" : "disabled"), "toggle_startup_updates");
+		opts.add_item("Check for updates on startup. Currently " + (check_updates_on_startup ? "On" : "Off"), "toggle_startup_updates");
 		opts.add_item("Back", "back");
 
 		int choice = opts.run(0, true);

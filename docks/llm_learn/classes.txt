@@ -9,13 +9,6 @@ class physics_convex_mesh {
 	float get_volume() const property;
 	vector get_local_inertia_tensor(float mass, vector scale) const;
 }
-class physics_half_edge_structure_edge {
-	uint vertex_index;
-	uint twin_edge_index;
-	uint face_index;
-	uint next_edge_index;
-	physics_half_edge_structure_edge();
-}
 class string {
 	string();
 	string(const string&in);
@@ -81,41 +74,6 @@ class string {
 	string opMul(uint) const;
 	string& opMulAssign(uint);
 	uint64 count(const string&in search, uint64 start = 0) const;
-	string lowercase() const;
-	string uppercase() const;
-	string casefold() const;
-	string lowercase(const string&inout) const;
-	string uppercase(const string&inout) const;
-	string titlecase() const;
-	string titlecase(const string&inout) const;
-	int compare(const string&inout, const bool) const;
-	int collate(const string&inout, const bool) const;
-	bool is_valid_unicode() const;
-	string to_nfc() const;
-	string to_nfd() const;
-	string to_nfkc() const;
-	string to_nfkd() const;
-	string to_unaccented() const;
-	bool is_nfc() const;
-	bool is_nfd() const;
-	bool is_nfkc() const;
-	bool is_nfkd() const;
-	unicode::general_category general_category() const;
-	bool is_alphabetic() const;
-	bool is_numeric() const;
-	bool is_alphanumeric() const;
-	bool is_whitespace() const;
-	bool is_reserved() const;
-	bool is_valid_char() const;
-	bool is_valid_scalar() const;
-	bool is_supplementary() const;
-	bool is_noncharacter() const;
-	bool is_surrogate() const;
-	bool is_private_use() const;
-	bool is_control() const;
-	string get_script() const;
-	bool has_script(const string&inout) const;
-	array<uint64>@ find(const string&inout, const bool) const;
 	string format(array<string>@ elements) const;
 	string format(const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null, const ?&in = null) const;
 	uint64 get_address() const property;
@@ -163,6 +121,48 @@ class string {
 	uint unpacket(uint, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out);
 	uint unpacket(uint, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out);
 	uint unpacket(uint, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out, const ?&out);
+	string lowercase() const;
+	string uppercase() const;
+	string casefold() const;
+	string lowercase(const string&inout) const;
+	string uppercase(const string&inout) const;
+	string titlecase() const;
+	string titlecase(const string&inout) const;
+	int compare(const string&inout, const bool) const;
+	int collate(const string&inout, const bool) const;
+	bool is_valid_unicode() const;
+	string to_nfc() const;
+	string to_nfd() const;
+	string to_nfkc() const;
+	string to_nfkd() const;
+	string to_unaccented() const;
+	bool is_nfc() const;
+	bool is_nfd() const;
+	bool is_nfkc() const;
+	bool is_nfkd() const;
+	unicode::general_category general_category() const;
+	bool is_alphabetic() const;
+	bool is_numeric() const;
+	bool is_alphanumeric() const;
+	bool is_whitespace() const;
+	bool is_reserved() const;
+	bool is_valid_char() const;
+	bool is_valid_scalar() const;
+	bool is_supplementary() const;
+	bool is_noncharacter() const;
+	bool is_surrogate() const;
+	bool is_private_use() const;
+	bool is_control() const;
+	string get_script() const;
+	bool has_script(const string&inout) const;
+	array<uint64>@ find(const string&inout, const bool) const;
+}
+class physics_half_edge_structure_edge {
+	uint vertex_index;
+	uint twin_edge_index;
+	uint face_index;
+	uint next_edge_index;
+	physics_half_edge_structure_edge();
 }
 class random_xorshift {
 	random_xorshift();
@@ -170,6 +170,7 @@ class random_xorshift {
 	random_xorshift(uint64 seed);
 	uint next();
 	float nextf();
+	int64 next64();
 	int range(int min, int max);
 	void seed(uint s);
 	void seed64(uint64 s);
@@ -265,6 +266,15 @@ class any {
 	bool retrieve(int64&out);
 	bool retrieve(double&out);
 }
+class raycast_info {
+	vector world_point;
+	vector world_normal;
+	float hit_fraction;
+	int triangle_index;
+	physics_body@ body;
+	physics_collider@ collider;
+	raycast_info();
+}
 class memory_buffer<T> {
 	uint64 address;
 	uint64 size;
@@ -278,6 +288,8 @@ class memory_buffer<T> {
 }
 class line_converting_writer {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	line_converting_writer();
 	line_converting_writer(datastream@, const string&in line_ending = spec::NEWLINE_DEFAULT, const string&in = \\, int byteorder = 1);
@@ -349,6 +361,7 @@ class line_converting_writer {
 	string read_string();
 	line_converting_writer& opShl(string);
 	line_converting_writer& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -357,6 +370,8 @@ class line_converting_writer {
 }
 class base64_encoder {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	base64_encoder();
 	base64_encoder(datastream@, int options = 0, const string&in = \\, int byteorder = 1);
@@ -428,6 +443,7 @@ class base64_encoder {
 	string read_string();
 	base64_encoder& opShl(string);
 	base64_encoder& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -454,6 +470,8 @@ class physics_contact_point {
 }
 class memory_reader {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	memory_reader();
 	memory_reader(uint64, uint64, const string&in encoding = \\, int byteorder = 1);
@@ -525,6 +543,7 @@ class memory_reader {
 	string read_string();
 	memory_reader& opShl(string);
 	memory_reader& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -637,6 +656,8 @@ class calendar {
 }
 class inflating_writer {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	inflating_writer();
 	inflating_writer(datastream@, compression_method compression = COMPRESSION_METHOD_ZLIB, const string&in = \\, int byteorder = 1);
@@ -708,6 +729,7 @@ class inflating_writer {
 	string read_string();
 	inflating_writer& opShl(string);
 	inflating_writer& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -749,6 +771,8 @@ class mail_recipient {
 }
 class counting_writer {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	counting_writer();
 	counting_writer(datastream@, const string&in = \\, int byteorder = 1);
@@ -820,6 +844,7 @@ class counting_writer {
 	string read_string();
 	counting_writer& opShl(string);
 	counting_writer& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -833,6 +858,43 @@ class counting_writer {
 	void add_chars(int64);
 	void add_lines(int64);
 	void add_pos(int64);
+}
+class graphics_renderer {
+	graphics_renderer();
+	bool get_is_valid() const property;
+	string get_name() const property;
+	bool clear();
+	bool present();
+	bool draw_point(float x, float y);
+	bool draw_line(float x1, float y1, float x2, float y2);
+	bool draw_rect(float x, float y, float w, float h);
+	bool fill_rect(float x, float y, float w, float h);
+	bool set_draw_color(uint r, uint g, uint b, uint a);
+	bool get_draw_color(uint&out r, uint&out g, uint&out b, uint&out a) const;
+	bool set_scale(float sx, float sy);
+	bool get_scale(float&out sx, float&out sy) const;
+	bool set_vsync(int vsync);
+	bool get_vsync(int&out vsync) const;
+	bool flush();
+	bool set_color_scale(float scale);
+	float get_color_scale() const property;
+	bool set_draw_blend_mode(blend_mode mode);
+	blend_mode get_draw_blend_mode() const property;
+	bool get_viewport_set() const property;
+	bool get_clip_enabled() const property;
+	bool get_output_size(int&out w, int&out h) const;
+	bool get_current_output_size(int&out w, int&out h) const;
+	bool render_graphic(graphic@ gfx, float dst_x, float dst_y);
+	bool render_graphic(graphic@ gfx, float src_x, float src_y, float src_w, float src_h, float dst_x, float dst_y, float dst_w, float dst_h);
+	graphics_texture@ create_texture(graphic@ gfx);
+	bool render_texture(graphics_texture@ tex, float dst_x, float dst_y);
+	bool render_texture(graphics_texture@ tex, float src_x, float src_y, float src_w, float src_h, float dst_x, float dst_y, float dst_w, float dst_h);
+	bool set_logical_presentation(int w, int h, renderer_logical_presentation mode);
+	bool get_logical_presentation(int&out w, int&out h, renderer_logical_presentation&out mode) const;
+	bool set_viewport(int x, int y, int w, int h);
+	bool get_viewport(int&out x, int&out y, int&out w, int&out h) const;
+	bool set_clip_rect(int x, int y, int w, int h);
+	bool get_clip_rect(int&out x, int&out y, int&out w, int&out h) const;
 }
 class timer_queue {
 	const string failures;
@@ -878,6 +940,8 @@ class joystick_power_info {
 }
 class counting_reader {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	counting_reader();
 	counting_reader(datastream@, const string&in = \\, int byteorder = 1);
@@ -949,6 +1013,7 @@ class counting_reader {
 	string read_string();
 	counting_reader& opShl(string);
 	counting_reader& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -962,6 +1027,62 @@ class counting_reader {
 	void add_chars(int64);
 	void add_lines(int64);
 	void add_pos(int64);
+}
+class text_font {
+	text_font(const string&in name, float size, uint style = FONT_STYLE_NORMAL);
+	uint get_generation() const property;
+	bool add_fallback_font(text_font@ font);
+	bool remove_fallback_font(text_font@ font);
+	void clear_fallback_fonts();
+	bool set_size(float ptsize);
+	float get_size() const property;
+	bool set_size_dpi(float ptsize, int hdpi, int vdpi);
+	bool get_dpi(int&out hdpi, int&out vdpi) const;
+	void set_style(uint style) property;
+	uint get_style() const property;
+	bool set_outline(int outline);
+	int get_outline() const property;
+	int get_faces_count() const property;
+	bool set_sdf(bool enabled);
+	bool get_sdf() const property;
+	int get_weight() const property;
+	void set_wrap_alignment(font_align alignment) property;
+	font_align get_wrap_alignment() const property;
+	int get_height() const property;
+	int get_ascent() const property;
+	int get_descent() const property;
+	void set_line_skip(int skip) property;
+	int get_line_skip() const property;
+	void set_kerning(bool enabled) property;
+	bool get_kerning() const property;
+	bool get_is_fixed_width() const property;
+	bool get_is_scalable() const property;
+	string get_family_name() const property;
+	string get_style_name() const property;
+	bool set_direction(font_direction dir);
+	font_direction get_direction() const property;
+	bool set_script(uint script);
+	uint get_script() const property;
+	bool set_language(const string&in language_bcp47);
+	bool has_glyph(uint codepoint);
+	graphic@ render_text_solid(const string&in text, uint r, uint g, uint b);
+	graphic@ render_text_solid_wrapped(const string&in text, int wrap_width, uint r, uint g, uint b);
+	graphic@ render_text_blended(const string&in text, uint r, uint g, uint b);
+	graphic@ render_text_blended_wrapped(const string&in text, int wrap_width, uint r, uint g, uint b);
+	graphic@ render_text_shaded(const string&in text, uint fg_r, uint fg_g, uint fg_b, uint bg_r, uint bg_g, uint bg_b);
+	graphic@ render_text_shaded_wrapped(const string&in text, int wrap_width, uint fg_r, uint fg_g, uint fg_b, uint bg_r, uint bg_g, uint bg_b);
+	graphic@ render_text_lcd(const string&in text, uint fg_r, uint fg_g, uint fg_b, uint bg_r, uint bg_g, uint bg_b);
+	graphic@ render_text_lcd_wrapped(const string&in text, int wrap_width, uint fg_r, uint fg_g, uint fg_b, uint bg_r, uint bg_g, uint bg_b);
+	graphic@ render_glyph_solid(uint ch, uint r, uint g, uint b);
+	graphic@ render_glyph_blended(uint ch, uint r, uint g, uint b);
+	graphic@ render_glyph_shaded(uint ch, uint fg_r, uint fg_g, uint fg_b, uint bg_r, uint bg_g, uint bg_b);
+	graphic@ render_glyph_lcd(uint ch, uint fg_r, uint fg_g, uint fg_b, uint bg_r, uint bg_g, uint bg_b);
+	graphic@ get_glyph_image(uint ch) const;
+	bool get_glyph_metrics(uint ch, int&out minx, int&out maxx, int&out miny, int&out maxy, int&out advance) const;
+	bool get_kerning_size(uint prev_ch, uint ch, int&out kerning) const;
+	bool get_string_size(const string&in text, int&out w, int&out h) const;
+	bool get_string_size_wrapped(const string&in text, int wrap_width, int&out w, int&out h) const;
+	bool measure_string(const string&in text, int max_width, int&out measured_width, int&out measured_length) const;
 }
 class dictionaryValue {
 	dictionaryValue();
@@ -978,6 +1099,8 @@ class dictionaryValue {
 }
 class duplicating_reader {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	duplicating_reader();
 	duplicating_reader(datastream@, const string&in = \\, int byteorder = 1);
@@ -1049,6 +1172,7 @@ class duplicating_reader {
 	string read_string();
 	duplicating_reader& opShl(string);
 	duplicating_reader& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1088,6 +1212,8 @@ class dictionary {
 }
 class line_converting_reader {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	line_converting_reader();
 	line_converting_reader(datastream@, const string&in line_ending = spec::NEWLINE_DEFAULT, const string&in = \\, int byteorder = 1);
@@ -1159,6 +1285,7 @@ class line_converting_reader {
 	string read_string();
 	line_converting_reader& opShl(string);
 	line_converting_reader& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1167,6 +1294,8 @@ class line_converting_reader {
 }
 class datastream {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	datastream(const string&in = \\);
 	datastream(const string&in initial_data, const string&in encoding, int byteorder = STREAM_BYTE_ORDER_NATIVE);
@@ -1238,6 +1367,7 @@ class datastream {
 	string read_string();
 	datastream& opShl(string);
 	datastream& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1271,6 +1401,8 @@ class datastream {
 }
 class file {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	file();
 	file(const string&in, const string&in, const string&in = \\, int byteorder = 1);
@@ -1342,6 +1474,7 @@ class file {
 	string read_string();
 	file& opShl(string);
 	file& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1372,6 +1505,8 @@ class engine_touch_motion_event {
 }
 class hex_decoder {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	hex_decoder();
 	hex_decoder(datastream@, const string&in = \\, int byteorder = 1);
@@ -1443,6 +1578,7 @@ class hex_decoder {
 	string read_string();
 	hex_decoder& opShl(string);
 	hex_decoder& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1451,6 +1587,8 @@ class hex_decoder {
 }
 class duplicating_writer {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	duplicating_writer(const string&in encoding = \\, int byteorder = 1);
 	duplicating_writer(datastream@, const string&in = \\, int byteorder = 1);
@@ -1523,6 +1661,7 @@ class duplicating_writer {
 	string read_string();
 	duplicating_writer& opShl(string);
 	duplicating_writer& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1534,6 +1673,8 @@ class duplicating_writer {
 }
 class hex_encoder {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	hex_encoder();
 	hex_encoder(datastream@, const string&in = \\, int byteorder = 1);
@@ -1605,6 +1746,7 @@ class hex_encoder {
 	string read_string();
 	hex_encoder& opShl(string);
 	hex_encoder& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1648,6 +1790,8 @@ class audio_freeverb_node {
 }
 class base32_decoder {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	base32_decoder();
 	base32_decoder(datastream@, const string&in = \\, int byteorder = 1);
@@ -1719,6 +1863,7 @@ class base32_decoder {
 	string read_string();
 	base32_decoder& opShl(string);
 	base32_decoder& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1727,6 +1872,8 @@ class base32_decoder {
 }
 class base32_encoder {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	base32_encoder();
 	base32_encoder(datastream@, bool padding = true, const string&in = \\, int byteorder = 1);
@@ -1798,6 +1945,7 @@ class base32_encoder {
 	string read_string();
 	base32_encoder& opShl(string);
 	base32_encoder& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1806,6 +1954,8 @@ class base32_encoder {
 }
 class base64_decoder {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	base64_decoder();
 	base64_decoder(datastream@, int options = 0, const string&in = \\, int byteorder = 1);
@@ -1877,14 +2027,21 @@ class base64_decoder {
 	string read_string();
 	base64_decoder& opShl(string);
 	base64_decoder& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
 	bool get_eof() const property;
 	bool open(datastream@, int options = 0, const string&in = \\, int byteorder = 1);
 }
+class physics_half_edge_structure_face {
+	void set_face_vertices(array<uint>@ face_vertices);
+	array<uint>@ get_face_vertices() const;
+}
 class random_reader {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	random_reader(const string&in encoding = \\, int byteorder = 1);
 	bool open(const string&in encoding = \\, int byteorder = 1);
@@ -1956,6 +2113,7 @@ class random_reader {
 	string read_string();
 	random_reader& opShl(string);
 	random_reader& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -1963,6 +2121,8 @@ class random_reader {
 }
 class discarding_writer {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	discarding_writer(const string&in encoding = \\, int byteorder = 1);
 	bool open(const string&in encoding = \\, int byteorder = 1);
@@ -2034,6 +2194,7 @@ class discarding_writer {
 	string read_string();
 	discarding_writer& opShl(string);
 	discarding_writer& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -2097,6 +2258,8 @@ class complex {
 }
 class deflating_reader {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	deflating_reader();
 	deflating_reader(datastream@, compression_method compression = COMPRESSION_METHOD_ZLIB, int level = 9, const string&in = \\, int byteorder = 1);
@@ -2168,6 +2331,7 @@ class deflating_reader {
 	string read_string();
 	deflating_reader& opShl(string);
 	deflating_reader& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -2254,41 +2418,10 @@ class physics_collider {
 	bool get_is_world_query_collider() const property;
 	void set_is_world_query_collider(bool is_world_query_collider) property;
 }
-class sqlite3statement {
-	int step();
-	int reset();
-	string get_expanded_sql_statement() property;
-	string get_sql_statement() property;
-	int get_bind_param_count() property;
-	int get_column_count() property;
-	int bind_blob(int, const string&in, bool = true);
-	int bind_double(int, double);
-	int bind_int(int, int);
-	int bind_int64(int, int64);
-	int bind_null(int);
-	int bind_param_index(const string&in);
-	string bind_param_name(int);
-	int bind_text(int, const string&in, bool = true);
-	int clear_bindings();
-	string column_blob(int);
-	int column_bytes(int);
-	string column_decltype(int);
-	double column_double(int);
-	int column_int(int);
-	int64 column_int64(int);
-	string column_name(int);
-	int column_type(int);
-	string column_text(int);
-}
-class git_repository_entry {
-	uint get_ctime() property;
-	uint get_mtime() property;
-	uint get_file_size() property;
-	string get_oid() property;
-	string get_path() property;
-}
 class deflating_writer {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	deflating_writer();
 	deflating_writer(datastream@, compression_method compression = COMPRESSION_METHOD_ZLIB, int level = 9, const string&in = \\, int byteorder = 1);
@@ -2360,6 +2493,7 @@ class deflating_writer {
 	string read_string();
 	deflating_writer& opShl(string);
 	deflating_writer& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -2373,6 +2507,8 @@ class fast_mutex_lock {
 }
 class inflating_reader {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	inflating_reader();
 	inflating_reader(datastream@, compression_method compression = COMPRESSION_METHOD_ZLIB, const string&in = \\, int byteorder = 1);
@@ -2444,14 +2580,25 @@ class inflating_reader {
 	string read_string();
 	inflating_reader& opShl(string);
 	inflating_reader& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
 	bool get_eof() const property;
 	bool open(datastream@, compression_method compression = COMPRESSION_METHOD_ZLIB, const string&in = \\, int byteorder = 1);
 }
+class physics_half_edge_structure {
+	void compute_half_edges();
+	uint add_vertex(uint vertex_point_index);
+	uint get_nb_faces() const property;
+	uint get_nb_half_edges() const property;
+	uint get_nb_vertices() const property;
+	const physics_half_edge_structure_face& get_face(uint index) const property;
+}
 class asset_encryptor {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	asset_encryptor();
 	asset_encryptor(datastream@, string&in key, const string&in = \\, int byteorder = 1);
@@ -2523,6 +2670,7 @@ class asset_encryptor {
 	string read_string();
 	asset_encryptor& opShl(string);
 	asset_encryptor& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -2531,6 +2679,8 @@ class asset_encryptor {
 }
 class asset_decryptor {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	asset_decryptor();
 	asset_decryptor(datastream@, const string&in key, const string&in = \\, int byteorder = 1);
@@ -2602,6 +2752,7 @@ class asset_decryptor {
 	string read_string();
 	asset_decryptor& opShl(string);
 	asset_decryptor& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -2610,6 +2761,8 @@ class asset_decryptor {
 }
 class memory_writer {
 	bool binary;
+	bool autoflush;
+	bool skip_eof;
 	bool sync_rw_cursors;
 	memory_writer();
 	memory_writer(uint64, uint64, const string&in encoding = \\, int byteorder = 1);
@@ -2681,6 +2834,7 @@ class memory_writer {
 	string read_string();
 	memory_writer& opShl(string);
 	memory_writer& write_string(string);
+	void flush();
 	bool get_good() const property;
 	bool get_bad() const property;
 	bool get_fail() const property;
@@ -2688,13 +2842,8 @@ class memory_writer {
 	bool open(uint64, uint64, const string&in encoding = \\, int byteorder = 1);
 }
 class pack_interface {
-	sqlite_pack@ opCast();
 	pack_file@ opCast();
-}
-class physics_half_edge_structure_vertex {
-	uint vertex_point_index;
-	uint vertex_edge_index;
-	physics_half_edge_structure_vertex(uint vertex_coords_index);
+	sqlite_pack@ opCast();
 }
 class json_object {
 	json_object();
@@ -2720,6 +2869,11 @@ class json_object {
 	bool is_object(const string&in key) const;
 	array<string>@ get_keys() const;
 }
+class physics_half_edge_structure_vertex {
+	uint vertex_point_index;
+	uint vertex_edge_index;
+	physics_half_edge_structure_vertex(uint vertex_coords_index);
+}
 class json_array {
 	json_array();
 	json_array(json_array@ other);
@@ -2743,6 +2897,45 @@ class json_array {
 	bool is_array(uint index);
 	bool is_null(uint index);
 	bool is_object(uint index);
+}
+class internet_request {
+	const bool no_curl;
+	const bool complete;
+	const bool in_progress;
+	bool follow_redirects;
+	int max_redirects;
+	const double bytes_downloaded;
+	const double download_size;
+	const double download_percent;
+	const double bytes_uploaded;
+	const double upload_size;
+	const double upload_percent;
+	const int status_code;
+	const double total_time;
+	const string url;
+	const string final_url;
+	const string response_body;
+	const string response_headers;
+	string debug_file;
+	string user_agent;
+	const string path;
+	const string auth_username;
+	const string auth_password;
+	internet_request();
+	internet_request(const string&in, bool = true);
+	internet_request(const string&in, const string&in, bool = true);
+	internet_request(const string&in, const string&in, const string&in, bool = true);
+	bool perform();
+	bool perform(const string&in);
+	bool post(const string&in, const string&in, const string&in = '');
+	bool mail(const string&in, const string&in, const string&in, const string&in) const;
+	void set_url(const string&in) const;
+	void set_path(const string&in) const;
+	void set_authentication(string, string);
+	void set_payload(const string&in) const;
+	void set_mail(const string&in, const string&in) const;
+	void set_header(const string&in, const string&in) const;
+	void reset() const;
 }
 class var {
 	var();
@@ -2874,100 +3067,6 @@ class var {
 	var& opAssign(const json_array&in) const;
 	json_array@ opImplCast() const;
 }
-class internet_request {
-	const bool no_curl;
-	const bool complete;
-	const bool in_progress;
-	bool follow_redirects;
-	int max_redirects;
-	const double bytes_downloaded;
-	const double download_size;
-	const double download_percent;
-	const double bytes_uploaded;
-	const double upload_size;
-	const double upload_percent;
-	const int status_code;
-	const double total_time;
-	const string url;
-	const string final_url;
-	const string response_body;
-	const string response_headers;
-	string debug_file;
-	string user_agent;
-	const string path;
-	const string auth_username;
-	const string auth_password;
-	internet_request();
-	internet_request(const string&in, bool = true);
-	internet_request(const string&in, const string&in, bool = true);
-	internet_request(const string&in, const string&in, const string&in, bool = true);
-	bool perform();
-	bool perform(const string&in);
-	bool post(const string&in, const string&in, const string&in = '');
-	bool mail(const string&in, const string&in, const string&in, const string&in) const;
-	void set_url(const string&in) const;
-	void set_path(const string&in) const;
-	void set_authentication(string, string);
-	void set_payload(const string&in) const;
-	void set_mail(const string&in, const string&in) const;
-	void set_header(const string&in, const string&in) const;
-	void reset() const;
-}
-class git_repository {
-	git_repository();
-	int open(const string&in path);
-	int create(const string&in path);
-	bool close();
-	int add(const string&in path);
-	int add_all(array<string>@ paths, int flags = 0);
-	int add_all(array<string>@ paths, int flags, git_repository_match_callback@ callback, const string&in callback_data = \\);
-	int update_all(array<string>@ paths);
-	int update_all(array<string>@ paths, git_repository_match_callback@ callback, const string&in callback_data = \\);
-	int remove(const string&in path);
-	int remove_all(array<string>@ paths);
-	int remove_all(array<string>@ paths, git_repository_match_callback@ callback, const string&in callback_data = \\);
-	git_repository_commit@ commit(const string&in author, const string&in author_email, const string&in message, const string&in ref = \HEAD\);
-	git_repository_commit@ commit(const string&in author, const string&in author_email, const string&in committer, const string&in committer_email, const string&in message, const string&in ref = \HEAD\);
-	string commit_diff(git_repository_commit@ commit1, git_repository_commit@ commit2, uint context_lines = 3, uint interhunk_lines = 0, uint flags = 0, uint format = 1, array<string>@ pathspec = {}, const string&in old_prefix = \a\, const string&in new_prefix = \b\);
-	git_repository_commit@ commit_lookup(const string&in oid);
-	git_repository_commit_iterator@ commit_iterate(array<string>@ path_filter = {}, const string&in author_filter = '', const string&in message_filter = '', uint64 min_time_filter = 0, uint64 max_time_filter = 0, uint start = 0, uint count = 0);
-	git_repository_entry@ get_entry(uint index);
-	int get_entry_count() property;
-	int get_is_empty() property;
-	string get_path() property;
-	string get_workdir() property;
-	bool get_active() property;
-}
-class combination {
-	combination();
-	void reset();
-	bool generate_all_combinations(int items, int size);
-	bool generate_all_combinations(int items, int min_size, int max_size);
-	bool generate_unique_combinations(int items, int size);
-	bool generate_unique_combinations(int items, int min_size, int max_size);
-	bool generate_permutations(int items);
-	bool next(array<int>@ list);
-	bool get_active() property;
-}
-class git_repository_commit {
-	uint get_time() property;
-	int get_parent_count() property;
-	git_repository_commit@ get_parent(uint);
-	const string get_id() property;
-	const string get_message() property;
-	string get_summary() property;
-	const string get_body() property;
-	const string get_raw_header() property;
-	const string get_committer() property;
-	const string get_committer_email() property;
-	const string get_author() property;
-	const string get_author_email() property;
-}
-class git_repository_commit_iterator {
-	git_repository_commit@ get_commit() property;
-	git_repository_commit@ opImplCast();
-	bool opPostInc();
-}
 class ref {
 	ref();
 	ref(const ref&in);
@@ -3014,52 +3113,41 @@ class vector {
 	const float& opIndex(int index) const;
 	string opImplConv() const;
 }
-class sqlite3 {
-	sqlite3();
-	sqlite3(const string&in, int = 6);
-	int close();
-	int open(const string&in, int = 6);
-	sqlite3statement@ prepare(const string&in, int&out = void);
-	int execute(const string&in, array<array<string>>@ = null);
-	int64 get_rows_changed() property;
-	int64 get_total_rows_changed() property;
-	int limit(int id, int val);
-	int set_authorizer(sqlite3authorizer@, const string&in = \\);
-	int64 get_last_insert_rowid() property;
-	void set_last_insert_rowid(int64) property;
-	int get_last_error();
-	string get_last_error_text();
+class git_repository {
+	git_repository();
+	int open(const string&in path);
+	int create(const string&in path);
+	bool close();
+	int add(const string&in path);
+	int add_all(array<string>@ paths, int flags = 0);
+	int add_all(array<string>@ paths, int flags, git_repository_match_callback@ callback, const string&in callback_data = \\);
+	int update_all(array<string>@ paths);
+	int update_all(array<string>@ paths, git_repository_match_callback@ callback, const string&in callback_data = \\);
+	int remove(const string&in path);
+	int remove_all(array<string>@ paths);
+	int remove_all(array<string>@ paths, git_repository_match_callback@ callback, const string&in callback_data = \\);
+	git_repository_commit@ commit(const string&in author, const string&in author_email, const string&in message, const string&in ref = \HEAD\);
+	git_repository_commit@ commit(const string&in author, const string&in author_email, const string&in committer, const string&in committer_email, const string&in message, const string&in ref = \HEAD\);
+	string commit_diff(git_repository_commit@ commit1, git_repository_commit@ commit2, uint context_lines = 3, uint interhunk_lines = 0, uint flags = 0, uint format = 1, array<string>@ pathspec = {}, const string&in old_prefix = \a\, const string&in new_prefix = \b\);
+	git_repository_commit@ commit_lookup(const string&in oid);
+	git_repository_commit_iterator@ commit_iterate(array<string>@ path_filter = {}, const string&in author_filter = '', const string&in message_filter = '', uint64 min_time_filter = 0, uint64 max_time_filter = 0, uint start = 0, uint count = 0);
+	git_repository_entry@ get_entry(uint index);
+	int get_entry_count() property;
+	int get_is_empty() property;
+	string get_path() property;
+	string get_workdir() property;
 	bool get_active() property;
 }
-class sqlite_pack {
-	sqlite_pack();
-	bool open(const string&in filename, const int mode = SQLITE_PACK_OPEN_MODE_READ_ONLY, const string&inout key = \\);
-	bool rekey(const string&inout key);
-	bool close();
-	bool add_file(const string&in disc_filename, const string&in pack_filename, bool allow_replace = false);
-	bool add_directory(const string&in dir, const bool allow_replace = false);
-	bool add_memory(const string&in pack_filename, const string&in data, bool allow_replace = false);
-	bool delete_file(const string&in pack_filename);
-	bool file_exists(const string&in pack_filename) const;
-	string get_file_name(int64 index) const;
-	array<string>@ list_files() const;
-	uint get_file_size(const string&in pack_filename) const;
-	string read_file(const string&in pack_filename, uint offset_in_file, uint read_byte_count) const;
-	bool get_active() const property;
-	uint get_size() const property;
-	datastream@ open_file(const string&inout file_name, const bool rw);
-	void allocate_file(const string&inout file_name, const int64 size, const bool allow_replace = false);
-	bool rename_file(const string&inout old, const string&inout new_);
-	void clear();
-	sqlite3statement@ prepare(const string&inout statement, const bool persistant = false);
-	array<string>@ find(const string&inout what, const sqlite_pack_find_mode mode = SQLITE_PACK_FIND_MODE_LIKE);
-	array<dictionary@>@ exec(const string&inout sql);
-	pack_interface@ opImplCast();
-	bool create(const string&in filename, const string&in key = \\);
-	bool open(const string&in filename, const string&in key = \\);
-	bool add_stream(const string&in internal_name, datastream@ ds, const bool allow_replace = false);
-	int64 get_file_count() const property;
-	bool extract_file(const string&in internal_name, const string&in file_on_disk);
+class combination {
+	combination();
+	void reset();
+	bool generate_all_combinations(int items, int size);
+	bool generate_all_combinations(int items, int min_size, int max_size);
+	bool generate_unique_combinations(int items, int size);
+	bool generate_unique_combinations(int items, int min_size, int max_size);
+	bool generate_permutations(int items);
+	bool next(array<int>@ list);
+	bool get_active() property;
 }
 class matrix3x3 {
 	matrix3x3();
@@ -3148,6 +3236,59 @@ class physics_transform {
 	vector opMul(const vector&in) const;
 	string opImplConv();
 }
+class physics_rigid_body {
+	physics_entity get_entity() const property;
+	bool get_is_active() const property;
+	void set_is_active(bool is_active) property;
+	const physics_transform& get_transform() const property;
+	void set_transform(const physics_transform&in transform) property;
+	physics_collider@ add_collider(physics_collision_shape@ shape, const physics_transform&in transform);
+	void remove_collider(physics_collider&in collider);
+	bool test_point_inside(const vector&in point) const;
+	bool raycast(const ray&inout point, raycast_info&inout raycast_info) const;
+	bool test_aabb_overlap(const aabb&in world_aabb) const;
+	aabb get_aabb() const property;
+	const physics_collider& get_collider(uint index) const;
+	physics_collider& get_collider(uint index);
+	uint get_nb_colliders() const property;
+	vector get_world_point(const vector&in local_point) const;
+	vector get_world_vector(const vector&in local_vector) const;
+	vector get_local_point(const vector&in world_point) const;
+	vector get_local_vector(const vector&in world_vector) const;
+	bool get_is_debug_enabled() const property;
+	void set_debug_enabled(bool enabled) property;
+	void set_user_data(any@ userData);
+	any@ get_user_data() const;
+	float get_mass() const property;
+	void set_mass(float mass) property;
+	vector get_linear_velocity() const property;
+	void set_linear_velocity(const vector&in linear_velocity) property;
+	vector get_angular_velocity() const property;
+	void set_angular_velocity(const vector&in angular_velocity) property;
+	const vector& get_local_inertia_tensor() const property;
+	void set_local_inertia_tensor(const vector&in local_inertia_tensor) property;
+	const vector& get_local_center_of_mass() const property;
+	void set_local_center_of_mass(const vector&in local_center_of_mass) property;
+	void update_local_center_of_mass_from_colliders();
+	void update_local_inertia_tensor_from_colliders();
+	void update_mass_from_colliders();
+	void update_mass_properties_from_colliders();
+	physics_body_type get_type() const property;
+	void set_type(physics_body_type type) property;
+	bool get_is_gravity_enabled() const property;
+	void set_is_gravity_enabled(bool enabled) property;
+	void set_is_sleeping(bool enabled);
+	float get_linear_damping() const property;
+	void set_linear_damping(float linear_damping) property;
+	float get_angular_damping() const property;
+	void set_angular_damping(float angular_damping) property;
+	const vector& get_linear_lock_axis_factor() const property;
+	void set_linear_lock_axis_factor(const vector&in linear_lock_axis_factor) property;
+	const vector& get_angular_lock_axis_factor() const property;
+	void set_angular_lock_axis_factor(const vector&in angular_lock_axis_factor) property;
+	physics_body@ opImplCast();
+	const physics_body@ opImplCast() const;
+}
 class ray {
 	vector point1;
 	vector point2;
@@ -3224,84 +3365,10 @@ class aabb {
 	bool test_ray_intersect(const vector&in ray_origin, const vector&in ray_direction, float ray_max_fraction);
 	bool raycast(const ray&in ray, vector&out hit_point);
 }
-class raycast_info {
-	vector world_point;
-	vector world_normal;
-	float hit_fraction;
-	int triangle_index;
-	physics_body@ body;
-	physics_collider@ collider;
-	raycast_info();
-}
 class physics_message {
 	string text;
 	physics_message_type type;
 	physics_message(string text, physics_message_type type = PHYSICS_MESSAGE_ERROR);
-}
-class physics_half_edge_structure_face {
-	void set_face_vertices(array<uint>@ face_vertices);
-	array<uint>@ get_face_vertices() const;
-}
-class physics_half_edge_structure {
-	void compute_half_edges();
-	uint add_vertex(uint vertex_point_index);
-	uint get_nb_faces() const property;
-	uint get_nb_half_edges() const property;
-	uint get_nb_vertices() const property;
-	const physics_half_edge_structure_face& get_face(uint index) const property;
-}
-class physics_rigid_body {
-	physics_entity get_entity() const property;
-	bool get_is_active() const property;
-	void set_is_active(bool is_active) property;
-	const physics_transform& get_transform() const property;
-	void set_transform(const physics_transform&in transform) property;
-	physics_collider@ add_collider(physics_collision_shape@ shape, const physics_transform&in transform);
-	void remove_collider(physics_collider&in collider);
-	bool test_point_inside(const vector&in point) const;
-	bool raycast(const ray&inout point, raycast_info&inout raycast_info) const;
-	bool test_aabb_overlap(const aabb&in world_aabb) const;
-	aabb get_aabb() const property;
-	const physics_collider& get_collider(uint index) const;
-	physics_collider& get_collider(uint index);
-	uint get_nb_colliders() const property;
-	vector get_world_point(const vector&in local_point) const;
-	vector get_world_vector(const vector&in local_vector) const;
-	vector get_local_point(const vector&in world_point) const;
-	vector get_local_vector(const vector&in world_vector) const;
-	bool get_is_debug_enabled() const property;
-	void set_debug_enabled(bool enabled) property;
-	void set_user_data(any@ userData);
-	any@ get_user_data() const;
-	float get_mass() const property;
-	void set_mass(float mass) property;
-	vector get_linear_velocity() const property;
-	void set_linear_velocity(const vector&in linear_velocity) property;
-	vector get_angular_velocity() const property;
-	void set_angular_velocity(const vector&in angular_velocity) property;
-	const vector& get_local_inertia_tensor() const property;
-	void set_local_inertia_tensor(const vector&in local_inertia_tensor) property;
-	const vector& get_local_center_of_mass() const property;
-	void set_local_center_of_mass(const vector&in local_center_of_mass) property;
-	void update_local_center_of_mass_from_colliders();
-	void update_local_inertia_tensor_from_colliders();
-	void update_mass_from_colliders();
-	void update_mass_properties_from_colliders();
-	physics_body_type get_type() const property;
-	void set_type(physics_body_type type) property;
-	bool get_is_gravity_enabled() const property;
-	void set_is_gravity_enabled(bool enabled) property;
-	void set_is_sleeping(bool enabled);
-	float get_linear_damping() const property;
-	void set_linear_damping(float linear_damping) property;
-	float get_angular_damping() const property;
-	void set_angular_damping(float angular_damping) property;
-	const vector& get_linear_lock_axis_factor() const property;
-	void set_linear_lock_axis_factor(const vector&in linear_lock_axis_factor) property;
-	const vector& get_angular_lock_axis_factor() const property;
-	void set_angular_lock_axis_factor(const vector&in angular_lock_axis_factor) property;
-	physics_body@ opImplCast();
-	const physics_body@ opImplCast() const;
 }
 class atomic_flag {
 	atomic_flag();
@@ -3511,6 +3578,19 @@ class physics_convex_mesh_shape {
 	void set_scale(vector&inout scale) const property;
 	physics_collision_shape@ opImplCast();
 	const physics_collision_shape@ opImplCast() const;
+}
+class system_tray_menu_item {
+	bool get_valid() const property;
+	system_tray_menu_item_type get_type() const property;
+	void set_label(const string&in label) property;
+	string get_label() const property;
+	void set_checked(bool checked) property;
+	bool get_checked() const property;
+	void set_enabled(bool enabled) property;
+	bool get_enabled() const property;
+	void click();
+	void set_callback(system_tray_callback@ func);
+	system_tray_menu@ get_submenu() property;
 }
 class physics_height_field_shape {
 	physics_height_field_shape(physics_height_field@ height_field, const vector&in scaling = vector(1,1,1));
@@ -3739,6 +3819,17 @@ class atomic_uint16 {
 	uint16 opOrAssign(uint16 arg);
 	uint16 opXorAssign(uint16 arg);
 	bool get_is_always_lock_free() property;
+}
+class process {
+	bool get_valid() const property;
+	int64 get_pid() const property;
+	bool get_running() const property;
+	bool kill(bool force = true);
+	int wait();
+	string read();
+	datastream@ get_stdin() property;
+	datastream@ get_stdout() property;
+	datastream@ get_stderr() property;
 }
 class physics_contact_pair {
 	physics_contact_pair(const physics_contact_pair&in pair);
@@ -3992,12 +4083,18 @@ class engine_touch_event {
 	void clear();
 	uint get_count() const property;
 }
+class library_function {
+	var@ opCall(?&in...);
+	bool get_valid() const property;
+	string get_error() const property;
+}
 class library {
 	library();
 	bool load(const string&in filename);
 	bool unload();
 	bool get_active() const property;
-	dictionary@ call(const string&in signature, ?&in = null, ?&in = null, ?&in = null, ?&in = null, ?&in = null, ?&in = null, ?&in = null, ?&in = null, ?&in = null, ?&in = null);
+	library_function@ get(const string&in sig);
+	var@ call(const string&in sig, ?&in...);
 }
 class coordinate_map {
 	coordinate_map();
@@ -4058,18 +4155,29 @@ class http {
 	string request();
 	string opIndex(const string&in key);
 	spec::uri get_url() property;
+	const uuid& get_uuid() const property;
 	float get_progress() property;
 	int get_status_code() property;
 	string get_user_agent() const property;
 	void set_user_agent(const string&in agent = \\) property;
-	int get_max_retries() const property;
-	void set_max_retries(int retries) property;
-	int get_retry_delay() const property;
-	void set_retry_delay(int delay = 0) property;
+	uint get_max_retries() const property;
+	void set_max_retries(uint retries) property;
+	uint get_retry_delay() const property;
+	void set_retry_delay(uint delay = 0) property;
+	bool get_keepalive() const property;
+	void set_keepalive(bool enabled) property;
+	uint get_connect_timeout() const property;
+	void set_connect_timeout(uint timeout) property;
+	uint get_send_timeout() const property;
+	void set_send_timeout(uint timeout) property;
+	uint get_receive_timeout() const property;
+	void set_receive_timeout(uint timeout) property;
+	uint get_keepalive_timeout() const property;
+	void set_keepalive_timeout(uint timeout) property;
 	bool get_complete() property;
 	bool get_running() property;
 	void wait();
-	void reset();
+	void reset(bool configuration = false);
 }
 class network {
 	bool IPV6enabled;
@@ -6246,4 +6354,219 @@ class tts_voice {
 	string get_language() const property;
 	bool get_speaking() const property;
 	int get_voice() const property;
+}
+class sqlite3statement {
+	int step();
+	int reset();
+	string get_expanded_sql_statement() property;
+	string get_sql_statement() property;
+	int get_bind_param_count() property;
+	int get_column_count() property;
+	int bind_blob(int, const string&in, bool = true);
+	int bind_double(int, double);
+	int bind_int(int, int);
+	int bind_int64(int, int64);
+	int bind_null(int);
+	int bind_param_index(const string&in);
+	string bind_param_name(int);
+	int bind_text(int, const string&in, bool = true);
+	int clear_bindings();
+	string column_blob(int);
+	int column_bytes(int);
+	string column_decltype(int);
+	double column_double(int);
+	int column_int(int);
+	int64 column_int64(int);
+	string column_name(int);
+	int column_type(int);
+	string column_text(int);
+}
+class graphic {
+	int get_width() const property;
+	int get_height() const property;
+	int get_pitch() const property;
+	bool get_is_valid() const property;
+	bool lock();
+	void unlock();
+	bool save_bmp(const string&in file) const;
+	bool save_png(const string&in file) const;
+	bool set_rle(bool enabled);
+	bool set_color_mod(uint r, uint g, uint b);
+	bool get_color_mod(uint&out r, uint&out g, uint&out b) const;
+	bool set_alpha_mod(uint alpha);
+	uint get_alpha_mod() const;
+	bool set_blend_mode(blend_mode mode);
+	blend_mode get_blend_mode() const;
+	bool flip(flip_mode mode);
+	graphic@ convert(pixel_format pixel_format) const;
+	graphic@ duplicate() const;
+}
+class graphics_texture {
+	int get_width() const property;
+	int get_height() const property;
+	bool get_is_valid() const property;
+	bool set_color_mod(uint r, uint g, uint b);
+	bool get_color_mod(uint&out r, uint&out g, uint&out b) const;
+	bool set_alpha_mod(uint alpha);
+	uint get_alpha_mod() const;
+	bool set_blend_mode(blend_mode mode);
+	blend_mode get_blend_mode() const;
+}
+class game_window {
+	game_window(const string&in title, uint w, uint h, uint flags = 0);
+	bool show();
+	bool hide();
+	bool raise();
+	bool maximize();
+	bool minimize();
+	bool restore();
+	bool sync();
+	bool set_fullscreen(bool fullscreen);
+	bool set_title(const string&in title);
+	string get_title() const property;
+	uint get_id() const property;
+	uint64 get_flags() const property;
+	float get_pixel_density() const property;
+	float get_display_scale() const property;
+	uint get_pixel_format() const property;
+	bool set_bordered(bool bordered);
+	bool set_resizable(bool resizable);
+	bool set_always_on_top(bool on_top);
+	bool set_fill_document(bool fill);
+	bool set_modal(bool modal);
+	bool set_focusable(bool focusable);
+	bool set_keyboard_grab(bool grabbed);
+	bool get_keyboard_grab() const property;
+	bool set_mouse_grab(bool grabbed);
+	bool get_mouse_grab() const property;
+	bool set_opacity(float opacity);
+	float get_opacity() const property;
+	bool flash(uint operation);
+	bool show_system_menu(int x, int y);
+	bool set_icon(graphic@ icon);
+	bool get_position(int&out x, int&out y) const;
+	bool set_position(int x, int y);
+	bool get_size(int&out w, int&out h) const;
+	bool set_size(int w, int h);
+	bool get_size_in_pixels(int&out w, int&out h) const;
+	bool get_minimum_size(int&out w, int&out h) const;
+	bool set_minimum_size(int w, int h);
+	bool get_maximum_size(int&out w, int&out h) const;
+	bool set_maximum_size(int w, int h);
+	bool get_aspect_ratio(float&out min_aspect, float&out max_aspect) const;
+	bool set_aspect_ratio(float min_aspect, float max_aspect);
+	bool get_borders_size(int&out top, int&out left, int&out bottom, int&out right) const;
+	bool get_has_surface() const property;
+	bool update_surface();
+	bool destroy_surface();
+	bool set_surface_vsync(int vsync);
+	bool get_surface_vsync(int&out vsync) const;
+	bool set_progress_state(uint state);
+	uint get_progress_state() const property;
+	bool set_progress_value(float value);
+	float get_progress_value() const property;
+	void set_font(text_font@ font) property;
+	graphics_renderer@ get_renderer() property;
+	text_font@ get_font() property;
+	bool clear(uint r, uint g, uint b);
+	bool present();
+	void draw_text(const string&in text, float x, float y, uint r, uint g, uint b);
+	uint64 measure_text(const string&in text) const;
+	void draw_text_wrapped(const string&in text, float x, float y, int wrap_width, uint r, uint g, uint b);
+	uint64 measure_text_wrapped(const string&in text, int wrap_width) const;
+	void draw_rect(float x, float y, float w, float h, uint r, uint g, uint b, bool filled = false);
+	void draw_circle(float cx, float cy, int radius, uint r, uint g, uint b, bool filled = false);
+	void draw_line(float x1, float y1, float x2, float y2, uint r, uint g, uint b);
+	bool render_graphic(graphic@ gfx, float x, float y);
+	void draw_menu(array<string>@ items, float x, float y);
+	uint64 get_native_window() const property;
+}
+class system_tray_menu {
+	system_tray_menu_item@ insert_item(const string&in label, system_tray_callback@ callback = null, bool disabled = false, int pos = -1);
+	system_tray_menu_item@ insert_checkbox(const string&in label, bool checked = false, system_tray_callback@ callback = null, bool disabled = false, int pos = -1);
+	system_tray_menu_item@ insert_submenu(const string&in label, bool disabled = false, int pos = -1);
+	system_tray_menu_item@ insert_separator(int pos = -1);
+	void remove_entry(system_tray_menu_item@ item);
+	int get_entry_count() const property;
+	array<system_tray_menu_item@>@ get_entries() const property;
+}
+class system_tray {
+	system_tray(const string&in tooltip, graphic@ icon = null);
+	bool get_valid() const property;
+	void set_icon(graphic@ icon);
+	void set_tooltip(const string&in tooltip);
+	system_tray_menu@ get_menu() property;
+}
+class git_repository_entry {
+	uint get_ctime() property;
+	uint get_mtime() property;
+	uint get_file_size() property;
+	string get_oid() property;
+	string get_path() property;
+}
+class git_repository_commit {
+	uint get_time() property;
+	int get_parent_count() property;
+	git_repository_commit@ get_parent(uint);
+	const string get_id() property;
+	const string get_message() property;
+	string get_summary() property;
+	const string get_body() property;
+	const string get_raw_header() property;
+	const string get_committer() property;
+	const string get_committer_email() property;
+	const string get_author() property;
+	const string get_author_email() property;
+}
+class git_repository_commit_iterator {
+	git_repository_commit@ get_commit() property;
+	git_repository_commit@ opImplCast();
+	bool opPostInc();
+}
+class sqlite3 {
+	sqlite3();
+	sqlite3(const string&in, int = 6);
+	int close();
+	int open(const string&in, int = 6);
+	sqlite3statement@ prepare(const string&in, int&out = void);
+	int execute(const string&in, array<array<string>>@ = null);
+	int64 get_rows_changed() property;
+	int64 get_total_rows_changed() property;
+	int limit(int id, int val);
+	int set_authorizer(sqlite3authorizer@, const string&in = \\);
+	int64 get_last_insert_rowid() property;
+	void set_last_insert_rowid(int64) property;
+	int get_last_error();
+	string get_last_error_text();
+	bool get_active() property;
+}
+class sqlite_pack {
+	sqlite_pack();
+	bool open(const string&in filename, const int mode = SQLITE_PACK_OPEN_MODE_READ_ONLY, const string&inout key = \\);
+	bool rekey(const string&inout key);
+	bool close();
+	bool add_file(const string&in disc_filename, const string&in pack_filename, bool allow_replace = false);
+	bool add_directory(const string&in dir, const bool allow_replace = false);
+	bool add_memory(const string&in pack_filename, const string&in data, bool allow_replace = false);
+	bool delete_file(const string&in pack_filename);
+	bool file_exists(const string&in pack_filename) const;
+	string get_file_name(int64 index) const;
+	array<string>@ list_files() const;
+	uint get_file_size(const string&in pack_filename) const;
+	string read_file(const string&in pack_filename, uint offset_in_file, uint read_byte_count) const;
+	bool get_active() const property;
+	uint get_size() const property;
+	datastream@ open_file(const string&inout file_name, const bool rw);
+	void allocate_file(const string&inout file_name, const int64 size, const bool allow_replace = false);
+	bool rename_file(const string&inout old, const string&inout new_);
+	void clear();
+	sqlite3statement@ prepare(const string&inout statement, const bool persistant = false);
+	array<string>@ find(const string&inout what, const sqlite_pack_find_mode mode = SQLITE_PACK_FIND_MODE_LIKE);
+	array<dictionary@>@ exec(const string&inout sql);
+	pack_interface@ opImplCast();
+	bool create(const string&in filename, const string&in key = \\);
+	bool open(const string&in filename, const string&in key = \\);
+	bool add_stream(const string&in internal_name, datastream@ ds, const bool allow_replace = false);
+	int64 get_file_count() const property;
+	bool extract_file(const string&in internal_name, const string&in file_on_disk);
 }

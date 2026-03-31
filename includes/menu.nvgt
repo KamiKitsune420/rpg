@@ -299,7 +299,7 @@ int question_menu(string menutext, string[] options)
 	return qmenu.run(0, true);
 }
 
-string[] inv_compartment_names = {"Items", "Medicine", "Equipment", "Special"};
+string[] inv_compartment_names = {"Items", "Consumables", "Equipment", "Special"};
 int[] inv_compartment_positions = {0, 0, 0, 0};
 
 int get_item_compartment(string item_id)
@@ -456,14 +456,13 @@ void open_journey_menu()
 			confirm.intro_text = "Warning! This will exit to the main menu without saving. Are you sure?";
 			confirm.click_sound = "sounds\\ui\\menumove.ogg";
 			confirm.enter_sound = "sounds\\ui\\menuenter.ogg";
-			confirm.add_item("Yes, exit to main menu");
-			confirm.add_item("Cancel");
+			confirm.add_item("Yes.");
+			confirm.add_item("No");
 			int answer = confirm.run(0, true);
 			if (answer == 1)
 			{
 				fade_world_audio_out();
 				in_world = false;
-				speak("Returned to main menu.");
 				return;
 			}
 		}
